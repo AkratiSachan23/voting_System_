@@ -1,5 +1,5 @@
 import React from 'react';
-import { Vote, Users, Bot, Check, Shield, Lock } from 'lucide-react';
+import { Vote, Users, Check, Shield, Lock } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Background from '../assets/Background.mp4'
 import { Link } from 'react-router-dom';
@@ -80,7 +80,7 @@ const LandingPage = () => {
           </div>
         </div>
 
-        <AIAssistant />
+         
       </motion.section>
 
       <Features />
@@ -181,7 +181,7 @@ const Features = () => {
   );
 };
 
-const Footer = () => {
+export const Footer = () => {
   return (
     <footer className="bg-gray-900 text-white py-12">
       <div className="container mx-auto px-4">
@@ -227,25 +227,4 @@ const Footer = () => {
     </footer>
   );
 };
-
-const AIAssistant = () => {
-  return (
-    <motion.div
-      initial={{ scale: 0 }}
-      animate={{ scale: 1 }}
-      transition={{ delay: 1 }}
-      className="fixed bottom-8 right-8 z-50"
-    >
-      <motion.button
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
-        className="p-4 bg-white rounded-full shadow-lg hover:shadow-xl transition-all"
-        aria-label="AI Assistant"
-      >
-        <Bot className="w-6 h-6 text-indigo-600" />
-      </motion.button>
-    </motion.div>
-  );
-};
-
 export default LandingPage;
