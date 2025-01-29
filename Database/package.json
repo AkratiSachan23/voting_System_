@@ -1,0 +1,23 @@
+{
+  "name": "@repo/database",
+  "type" : "module",
+  "version": "1.0.0",
+  "main": "dist/db.js",
+  "scripts": {
+    "dev" : "tsc",
+    "build": "tsc --build",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "exports" : {
+    "./db" : "./src/db.ts"
+  }
+  ,
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "mongoose": "^8.9.5"
+  }
+}
