@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Phone, User, Lock, Mail } from 'lucide-react';
+import axios from 'axios';
 
 export interface SecurityInfo {
     mobile: string;
     username: string;
     password: string;
-    email?: string;
+    email: string;
   }
 
 interface Props {
@@ -55,9 +56,22 @@ export const SecuritySetupStep: React.FC<Props> = ({
     return false;
   };
 
-  const onSubmit = (data: SecurityInfo) => {
+  const onSubmit = async (data: SecurityInfo) => {
     if (!otpSent || !verifyOTP()) {
       alert('Please verify your mobile number');
+      return;
+    }
+    try {
+      const voter = await axios.post("http://localhost:3000/api/v1/emailcheck", {
+        email : data.email
+      })
+      if(voter.status !== 200){
+        alert("This email is already registered");
+        return;
+      }
+
+    } catch (error) {
+      alert("Server down. Please try again later.")
       return;
     }
     updateFormData(data);
@@ -185,7 +199,7 @@ export const SecuritySetupStep: React.FC<Props> = ({
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          Email (Optional)
+          Email
         </label>
         <div className="relative">
           <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />

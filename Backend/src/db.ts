@@ -17,7 +17,7 @@ if(MONOGDB_URL === undefined){
 const VoterSchema = new mongoose.Schema({
     firstName: { type: String, required: true },
     lastName: { type: String, required: true },
-    dateOfBirth: { type: Date, required: true },
+    dateOfBirth: { type: String, required: true },
     address: { type: String, required: true },
     gender: { type: String, required: true },
     idType: { type: String, required: true },

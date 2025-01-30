@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { FileText, Upload } from 'lucide-react';
-
+import axios from 'axios';
 export interface DetailInfo {
     partyLeaderName : string,
     manifesto : string,
@@ -28,9 +28,9 @@ export const PartyDetailsStep: React.FC<Props> = ({
     formState: { errors }
   } = useForm<DetailInfo>();
 
-  const handleFileChange = (
+  const handleFileChange = async (
     event: React.ChangeEvent<HTMLInputElement>,
-    setPreview: (url: string) => void
+    type : string
   ) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -38,11 +38,32 @@ export const PartyDetailsStep: React.FC<Props> = ({
         alert('File size should not exceed 10MB');
         return;
       }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      const localPreview = URL.createObjectURL(file);
+      if (type === "manifesto") {
+        setManifestoPreview(localPreview);
+      } else {
+        setPartyConstitutonPreview(localPreview);
+      }
+        const formData = new FormData();
+        formData.append('file', file);
+      try {
+        const upload = await axios.post('http://localhost:3000/api/v1/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        console.log(upload)
+        if(upload.status !== 200){
+            alert("Error in file uploading. Please try again!")
+            return;
+        }
+        const fileUrl = upload.data.fileUrl
+        if(type === "manifesto"){
+          setManifestoPreview(fileUrl);
+        }else{
+          setPartyConstitutonPreview(fileUrl);
+        }
+      } catch (error) {
+        alert("error to connect database")
+      }
     }
   };
 
@@ -95,7 +116,7 @@ export const PartyDetailsStep: React.FC<Props> = ({
                   type="file"
                   className="sr-only"
                   accept="image/*"
-                  onChange={(e) => handleFileChange(e, setManifestoPreview)}
+                  onChange={(e) => handleFileChange(e, "manifesto")}
                 />
               </label>
               <p className="pl-1">or drag and drop</p>
@@ -127,7 +148,7 @@ export const PartyDetailsStep: React.FC<Props> = ({
                   type="file"
                   className="sr-only"
                   accept="image/*"
-                  onChange={(e) => handleFileChange(e, setPartyConstitutonPreview)}
+                  onChange={(e) => handleFileChange(e, "partyConstitution")}
                 />
               </label>
               <p className="pl-1">or drag and drop</p>

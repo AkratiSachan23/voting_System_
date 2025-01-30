@@ -10,7 +10,6 @@ yarn-error.log*
 
 # Environment variables
 .env
-
 # IDE files
 .vscode/
 .idea/
@@ -29,3 +28,6 @@ build/
 # Operating system files
 .DS_Store
 Thumbs.db
+
+#service json
+src/skilled-circle-448817-d1-e3457c9445ad.json

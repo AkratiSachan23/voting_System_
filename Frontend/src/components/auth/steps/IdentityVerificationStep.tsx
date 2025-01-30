@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { FileText, Upload } from 'lucide-react';
-
+import axios from 'axios'
 export interface IdentityInfo {
     idType: 'aadhar' | 'voter';
     documentNumber: string;
@@ -22,16 +22,15 @@ export const IdentityVerificationStep: React.FC<Props> = ({
 }) => {
   const [selfiePreview, setSelfiePreview] = useState<string>('');
   const [documentPreview, setDocumentPreview] = useState<string>('');
-
   const {
     register,
     handleSubmit,
     formState: { errors }
   } = useForm<IdentityInfo>();
 
-  const handleFileChange = (
+  const handleFileChange = async (
     event: React.ChangeEvent<HTMLInputElement>,
-    setPreview: (url: string) => void
+    type: "selfie" | "document"
   ) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -39,14 +38,35 @@ export const IdentityVerificationStep: React.FC<Props> = ({
         alert('File size should not exceed 5MB');
         return;
       }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      const localPreview = URL.createObjectURL(file);
+    if (type === "selfie") {
+      setSelfiePreview(localPreview);
+    } else {
+      setDocumentPreview(localPreview);
     }
+      const formData = new FormData();
+      formData.append('file', file);
+      try {
+        const upload = await axios.post('http://localhost:3000/api/v1/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        console.log(upload);
+        if(upload.status !== 200){
+            alert("Error in file uploading. Please try again!")
+            return;
+        }
+        const fileUrl = upload.data.url;
+        if(type === "selfie"){
+          setSelfiePreview(fileUrl);
+        }else{
+          setDocumentPreview(fileUrl);
+        }
+      } catch (error) {
+        alert("error to connect database")
+      }
+      
   };
-
+}
   const onSubmit = (data: IdentityInfo) => {
     updateFormData({ ...data, selfieUrl: selfiePreview, documentUrl: documentPreview });
     onNext();
@@ -116,7 +136,9 @@ export const IdentityVerificationStep: React.FC<Props> = ({
                   type="file"
                   className="sr-only"
                   accept="image/*"
-                  onChange={(e) => handleFileChange(e, setSelfiePreview)}
+                  onChange={(e) => {
+                    handleFileChange(e,"selfie")
+                  } }
                 />
               </label>
               <p className="pl-1">or drag and drop</p>
@@ -148,7 +170,9 @@ export const IdentityVerificationStep: React.FC<Props> = ({
                   type="file"
                   className="sr-only"
                   accept="image/*"
-                  onChange={(e) => handleFileChange(e, setDocumentPreview)}
+                  onChange={(e) => {
+                    handleFileChange(e,"document")
+                  } }
                 />
               </label>
               <p className="pl-1">or drag and drop</p>
@@ -175,4 +199,4 @@ export const IdentityVerificationStep: React.FC<Props> = ({
       </div>
     </form>
   );
-};
+}

@@ -3,34 +3,26 @@ import { VoterSignInSchema } from './schema.js';
 import voterModel from './db.js'
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
-import { JWT_SECRET_KEY } from './config.js';
+import multer from 'multer'
+import { Storage } from '@google-cloud/storage'
+import path from 'path'
+import cors from 'cors'
+import { generateVoterIdNumber, extractTextFromImage, getPublicGoogleUrl } from './functions.js';
+
+
 const app = express();
 const PORT = 3000;
+export const storage = new Storage({keyFilename : 'src/skilled-circle-448817-d1-e3457c9445ad.json'});
+export const bucket = storage.bucket('votingbuck')
+const upload = multer({ storage: multer.memoryStorage() });
+app.use(cors());
 app.use(express.json());
-const generateVoterIdNumber = (firstName : string,lastName : string, gender : string, documentNumber : number, mobile : number) => {
-        const AadharNumber = documentNumber.toString().slice(-4);
-        const phoneNumber = mobile.toString().slice(5,8);
-        const firstLetter = firstName.charAt(2).toUpperCase();
-        const secondLetter = lastName.charAt(1).toUpperCase();
-        const thirdLetter = gender.charAt(0).toUpperCase();
-        let voterID = thirdLetter + secondLetter + firstLetter;
-        let i = 0, j= 0;
-        while(i<AadharNumber.length && j<phoneNumber.length){
-            voterID += AadharNumber[i];
-            voterID += phoneNumber[j];
-            i++;
-            j++;
-        }
-        while(i<AadharNumber.length){
-            voterID += AadharNumber[i];
-            i++;
-        }
-        while(j<phoneNumber.length){
-            voterID += phoneNumber[j];
-            j++;
-        }
-        return voterID;
+
+const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY;
+if(JWT_SECRET_KEY === undefined){
+    throw new Error("JWT_SECRET_KEY is not defined");
 }
+
 app.post('/api/v1/signup',async (req : Request,res : Response) => {
     const firstName = req.body.firstName;
     const lastName = req.body.lastName;
@@ -107,7 +99,7 @@ app.post('/api/v1/signup',async (req : Request,res : Response) => {
         console.error(error);
         res.status(500).json({message : "User not created"});
     }
-})
+});
 
 app.post('/api/v1/signin',async (req : Request,res : Response) => {
     const data = req.body;
@@ -155,8 +147,116 @@ app.post('/api/v1/signin',async (req : Request,res : Response) => {
         return;
     }
 
-})
+});
 
+app.post('/api/v1/upload', upload.single('file'), async (req: Request, res : Response) => {
+    if (!req.file) {
+       res.status(400).send('No file uploaded');
+       return;
+    }
+    
+    const blob = bucket.file(Date.now() + path.extname(req.file.originalname));
+    const blobStream = blob.createWriteStream({
+      resumable: false,
+    });
+    blobStream.on('finish', () => {
+      const publicUrl = `https://storage.googleapis.com/${bucket.name}/${blob.name}`;
+      res.status(200).send({ fileUrl: publicUrl });
+    });
+  
+    blobStream.on('error', (err) => {
+        console.log(err);
+      res.status(500).send({ error: 'Something went wrong during file upload' });
+    });
+  
+    blobStream.end(req.file.buffer);
+  });
+  
+app.post('/api/v1/emailcheck', async (req : Request,res : Response) => {
+    const email = req.body.email;
+    const user = await voterModel.voterModel.findOne({email});
+    if(!user){
+        res.status(200).json({
+            email : null
+        })
+        return;
+    }
+    res.status(300).json({
+        email : user.email
+    })
+  });
+
+app.post('/api/v1/verify', async (req : Request,res : Response) => {
+        try {
+            const voterId = req.body.voterId;
+            const file = req.body.file;
+            if (!voterId || !file) {
+                res.status(400).json({ message: "Missing voterId or file" });
+                return;
+            }
+            const fileUrl = await getPublicGoogleUrl(file);
+            const extractedText = await extractTextFromImage(fileUrl);
+            if (!extractedText) {
+                res.status(400).json({ message: "Failed to extract text" });
+                return;
+              }
+            const voter = await voterModel.voterModel.findOne({voterId});
+            if(!voter){
+                  res.status(401).json({
+                      message : "No voter found"
+                  })
+                  return;
+                }
+            
+            const fullName = `${voter.firstName} ${voter.lastName}`.toLowerCase().trim();
+            const dateOfBirth = voter.dateOfBirth.toString().toLowerCase().trim();
+            const gender = voter.gender.toLowerCase().trim();
+            const document = voter.documentNumber.toString().trim();
+            let documentNumber = "";
+            for(let i=0; i<document.length; i += 4){
+                documentNumber += document.slice(i,i+4 ) + ' ';
+            }
+            const extractedTextLower = extractedText.toLowerCase();
+            if(!extractedTextLower.includes(fullName)){
+                res.status(401).json({
+                    message: "Voter name is not verfied",
+                    verified: false,
+                  });
+                  return;
+            }
+            if(!extractedTextLower.includes(dateOfBirth)){
+                res.status(401).json({
+                    message: "Voter date of birth is not verfied",
+                    verified: false,
+                  });
+                  return;
+            }
+            if(!extractedTextLower.includes(gender)){
+                res.status(401).json({
+                    message: "Voter gender is not verfied",
+                    verified: false,
+                  });
+                  return;
+            }
+            if(!extractedTextLower.includes(documentNumber)){
+                res.status(401).json({
+                    message: "Voter document number is not verfied",
+                    verified: false,
+                  });
+                  return;
+            }
+            
+            res.status(200).json({
+                message: "Voter is verified",
+                verified: true,
+              });
+              return;
+        } catch (error) {
+            res.status(500).json({ message: "Internal server error" });
+            return;
+        }
+        
+    })
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });

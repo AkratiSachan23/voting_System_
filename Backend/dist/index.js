@@ -12,34 +12,19 @@ import { VoterSignInSchema } from './schema.js';
 import voterModel from './db.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import multer from 'multer';
 import { JWT_SECRET_KEY } from './config.js';
+import { Storage } from '@google-cloud/storage';
+import path from 'path';
+import cors from 'cors';
+import { generateVoterIdNumber, extractTextFromImage, getPublicGoogleUrl } from './functions.js';
 const app = express();
 const PORT = 3000;
+export const storage = new Storage({ keyFilename: 'src/skilled-circle-448817-d1-e3457c9445ad.json' });
+export const bucket = storage.bucket('votingbuck');
+const upload = multer({ storage: multer.memoryStorage() });
+app.use(cors());
 app.use(express.json());
-const generateVoterIdNumber = (firstName, lastName, gender, documentNumber, mobile) => {
-    const AadharNumber = documentNumber.toString().slice(-4);
-    const phoneNumber = mobile.toString().slice(5, 8);
-    const firstLetter = firstName.charAt(2).toUpperCase();
-    const secondLetter = lastName.charAt(1).toUpperCase();
-    const thirdLetter = gender.charAt(0).toUpperCase();
-    let voterID = thirdLetter + secondLetter + firstLetter;
-    let i = 0, j = 0;
-    while (i < AadharNumber.length && j < phoneNumber.length) {
-        voterID += AadharNumber[i];
-        voterID += phoneNumber[j];
-        i++;
-        j++;
-    }
-    while (i < AadharNumber.length) {
-        voterID += AadharNumber[i];
-        i++;
-    }
-    while (j < phoneNumber.length) {
-        voterID += phoneNumber[j];
-        j++;
-    }
-    return voterID;
-};
 app.post('/api/v1/signup', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const firstName = req.body.firstName;
     const lastName = req.body.lastName;
@@ -152,6 +137,93 @@ app.post('/api/v1/signin', (req, res) => __awaiter(void 0, void 0, void 0, funct
         });
     }
     catch (error) {
+        res.status(401).json({
+            message: "No voter found. Please register yourself first"
+        });
+        return;
+    }
+}));
+app.post('/api/v1/upload', upload.single('file'), (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    if (!req.file) {
+        res.status(400).send('No file uploaded');
+        return;
+    }
+    const blob = bucket.file(Date.now() + path.extname(req.file.originalname));
+    const blobStream = blob.createWriteStream({
+        resumable: false,
+    });
+    blobStream.on('finish', () => {
+        const publicUrl = `https://storage.googleapis.com/${bucket.name}/${blob.name}`;
+        res.status(200).send({ fileUrl: publicUrl });
+    });
+    blobStream.on('error', (err) => {
+        console.log(err);
+        res.status(500).send({ error: 'Something went wrong during file upload' });
+    });
+    blobStream.end(req.file.buffer);
+}));
+app.post('/api/v1/emailcheck', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const email = req.body.email;
+    const user = yield voterModel.voterModel.findOne({ email });
+    if (!user) {
+        res.status(200).json({
+            email: null
+        });
+        return;
+    }
+    res.status(300).json({
+        email: user.email
+    });
+}));
+app.post('/api/v1/verify', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const voterId = req.body.voterId;
+        const file = req.body.file;
+        if (!voterId || !file) {
+            res.status(400).json({ message: "Missing voterId or file" });
+            return;
+        }
+        const fileUrl = yield getPublicGoogleUrl(file);
+        const extractedText = yield extractTextFromImage(fileUrl);
+        if (!extractedText) {
+            res.status(400).json({ message: "Failed to extract text" });
+            return;
+        }
+        const voter = yield voterModel.voterModel.findOne({ voterId });
+        if (!voter) {
+            res.status(401).json({
+                message: "No voter found"
+            });
+            return;
+        }
+        const fullName = `${voter.firstName} ${voter.lastName}`.toLowerCase().trim();
+        const dateOfBirth = voter.dateOfBirth.toString().toLowerCase().trim();
+        const gender = voter.gender.toLowerCase().trim();
+        const document = voter.documentNumber.toString().trim();
+        let documentNumber = "";
+        for (let i = 0; i < document.length; i += 4) {
+            documentNumber += document.slice(i, i + 4) + ' ';
+        }
+        const extractedTextLower = extractedText.toLowerCase();
+        if (!extractedTextLower.includes(fullName) ||
+            // !extractedTextLower.includes(dateOfBirth) ||
+            !extractedTextLower.includes(gender) ||
+            !extractedTextLower.includes(documentNumber.trim())) {
+            res.status(401).json({
+                message: "Voter is not verified",
+                verified: false,
+            });
+            return;
+        }
+        res.status(200).json({
+            message: "Voter is verified",
+            verified: true,
+        });
+        return;
+    }
+    catch (error) {
+        res.status(500).json({ message: "Internal server error" });
+        return;
     }
 }));
 app.listen(PORT, () => {
