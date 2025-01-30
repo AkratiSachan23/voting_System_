@@ -1,6 +1,6 @@
 import express, { Request, Response,NextFunction } from 'express'
 import { VoterSignInSchema } from './schema.js';
-import voterModel from '../../Database/src/db.js'
+import voterModel from './db.js'
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
 import { JWT_SECRET_KEY } from './config.js';
@@ -44,7 +44,7 @@ app.post('/api/v1/signup',async (req : Request,res : Response) => {
     const mobile = req.body.mobile;
     const username = req.body.username;
     const password = req.body.password;
-    const email = req.body.email;
+    const email = req.body.email || undefined;
     const parsedData = VoterSignInSchema.safeParse({
         firstName,
         lastName,
@@ -69,11 +69,21 @@ app.post('/api/v1/signup',async (req : Request,res : Response) => {
     if(idType === "Aadhar Card"){
         voterId =  generateVoterIdNumber(firstName,lastName,gender,documentNumber,mobile);
     }
+   
     try {
+        const existingUser = await voterModel.voterModel.findOne({
+            $or: [{email}, { documentNumber }, { mobile }]
+        });
+
+        if (existingUser) {
+             res.status(400).json({ message: "Email, Mobile or Document Number already exists" });
+             return;
+        }
+        
         const response = await voterModel.voterModel.create({
             firstName,
             lastName,
-            dob,
+            dateOfBirth : dob,
             address,
             gender,
             idType,
@@ -83,12 +93,13 @@ app.post('/api/v1/signup',async (req : Request,res : Response) => {
             mobile,
             username,
             password: bcryptPassword,
-            email : email,
+            email,
             voterId : voterId
 
         })
         const token = jwt.sign(voterId,JWT_SECRET_KEY);
         res.json({
+            voterId,
             token,
             message : "User created successfully"
         })
@@ -98,6 +109,53 @@ app.post('/api/v1/signup',async (req : Request,res : Response) => {
     }
 })
 
+app.post('/api/v1/signin',async (req : Request,res : Response) => {
+    const data = req.body;
+    const parsedData = VoterSignInSchema.safeParse(data);
+    if(!parsedData.success){
+        res.status(401).json({
+            message : "Invalid data"
+        })
+        return;
+    }
+    const {username , password} = data;
+    const voterId = username;
+    try {
+        const voter = await voterModel.voterModel.findOne(
+            {
+                $or : [
+                    {username},
+                    {voterId}
+                ]
+            }
+        );
+        if(!voter){
+            res.status(401).json({
+                message : "No voter found. Please check you credentials"
+             })
+             return;
+        }
+        const isPasswordValid = await bcrypt.compare(password,voter.password);
+        if(!isPasswordValid) {
+            res.status(401).json({
+                message : "Invalid password. Please try again!"
+            });
+            return;
+        }
+        const token = jwt.sign(voter.voterId,JWT_SECRET_KEY);
+        res.json({
+            token,
+            message : "User logged in successfully"
+        })
+
+    } catch (error) {
+        res.status(401).json({
+            message : "No voter found. Please register yourself first"
+        })
+        return;
+    }
+
+})
 
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
