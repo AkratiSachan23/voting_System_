@@ -19,12 +19,14 @@ import {
 
 interface LayoutProps {
   children: React.ReactNode;
+  firstName : string;
+  lastName : string;
 }
 
-export default function VoterLayout({ children }: LayoutProps) {
+export default function VoterLayout({ children, firstName, lastName }: LayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isDarkMode, setIsDarkMode] = useState(false);
-  
+   console.log("firstName", firstName, lastName);
   const navItems = [
     { icon: <History className="w-5 h-5" />, label: 'Voting History', href: '#' },
     { icon: <Calendar className="w-5 h-5" />, label: 'Upcoming Elections', href: '#' },
@@ -68,7 +70,7 @@ export default function VoterLayout({ children }: LayoutProps) {
               {isDarkMode ? <Sun className="w-6 h-6" /> : <Moon className="w-6 h-6" />}
             </button>
             <div className="hidden md:block">
-              <span className="font-medium">Welcome, John Doe</span>
+              <span className="font-medium">Welcome, {firstName} {lastName}</span>
             </div>
           </div>
         </div>

@@ -3,6 +3,9 @@ import { motion } from 'framer-motion';
 import type { PersonalInfo } from './PersonalInfoStep';
 import type { IdentityInfo } from './IdentityVerificationStep';
 import type { SecurityInfo } from './SecuritySetupStep';
+import axios from 'axios';
+import Cookies from 'js-cookie';
+import { useNavigate } from 'react-router-dom';
 interface Props {
   formData: PersonalInfo & IdentityInfo & SecurityInfo;
   onPrevious: () => void;
@@ -10,6 +13,7 @@ interface Props {
 }
 
 export const ReviewStep: React.FC<Props> = ({ formData, onPrevious }) => {
+  const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [termsAccepted, setTermsAccepted] = React.useState(false);
   const [privacyAccepted, setPrivacyAccepted] = React.useState(false);
@@ -24,11 +28,34 @@ export const ReviewStep: React.FC<Props> = ({ formData, onPrevious }) => {
     setIsSubmitting(true);
     try {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      console.log('Form submitted:', formData);
+      console.log(formData);
+      const response = await axios.post('http://localhost:3000/api/v1/signup',{
+        firstName : formData.firstName,
+        lastName : formData.lastName,
+        dateOfBirth : formData.dateOfBirth,
+        address : formData.address,
+        gender : formData.gender,
+        idType : formData.idType,
+        documentNumber : formData.documentNumber,
+        selfieUrl : formData.selfieUrl,
+        documentUrl : formData.documentUrl,
+        mobile : formData.mobile,
+        username : formData.username,
+        password : formData.password,
+        email : formData.email
+      })
+      if(response.status !== 200){
+        console.log(response.data.message)
+        alert(response.data.message);
+        return;
+      }
+      const voterId = response.data.voterId;
+      const token = response.data.token;
+      Cookies.set('token',token, { expires: 2});
       alert('Registration successful!');
+      navigate(`/voter/dashboard/${token}`);
     } catch (error) {
-      console.error('Error submitting form:', error);
+      console.log(error);
       alert('An error occurred during registration. Please try again.');
     } finally {
       setIsSubmitting(false);

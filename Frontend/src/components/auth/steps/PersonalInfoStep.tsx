@@ -7,7 +7,7 @@ export interface PersonalInfo {
     lastName: string;
     dateOfBirth: string;
     address: string;
-    gender: 'male' | 'female' | 'other';
+    gender: 'Male' | 'Female' | 'Other';
   }
 
 interface Props {
@@ -23,6 +23,14 @@ export const PersonalInfoStep: React.FC<Props> = ({ onNext, updateFormData }) =>
   } = useForm<PersonalInfo>();
 
   const onSubmit = (data: PersonalInfo) => {
+    const dateObj = new Date(data.dateOfBirth);
+    const day = String(dateObj.getDate()).padStart(2, '0');
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0'); 
+    const year = dateObj.getFullYear();
+     
+    const formattedDate = `${day}/${month}/${year}`;
+    data.dateOfBirth = formattedDate;
+
     updateFormData(data);
     onNext();
   };
@@ -114,9 +122,9 @@ export const PersonalInfoStep: React.FC<Props> = ({ onNext, updateFormData }) =>
           className="w-full py-2 px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition duration-300"
         >
           <option value="">Select gender</option>
-          <option value="male">Male</option>
-          <option value="female">Female</option>
-          <option value="other">Other</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+          <option value="Other">Other</option>
         </select>
         {errors.gender && (
           <p className="mt-1 text-sm text-red-600">{errors.gender.message}</p>

@@ -27,8 +27,9 @@ const VoterSchema = new mongoose.Schema({
     mobile: { type: Number, required: true, unique: true  },
     username: { type: String, unique: true, required: true },
     password: { type: String, required: true },
-    email: { type: String, unique: true},
+    email: { type: String, unique: true, required: true },
     voterId : {type: String , required : true},
+    verified : {type : Boolean , default : false}
 });
 
 const PartySchema = new mongoose.Schema({

@@ -1,17 +1,19 @@
+
 import { 
   BarChart, 
   Calendar, 
   CheckCircle, 
   AlertCircle,
-  TrendingUp 
+  TrendingUp,
+  CircleX
 } from 'lucide-react';
 
-export default function VoterMain() {
+export default function VoterMain({verified, firstName, lastName, setRender} : {verified : boolean, firstName : string, lastName : string , setRender : (render : string) => void}) {
   return (
     <div className="space-y-6">
       {/* Welcome Section */}
       <div className="bg-white rounded-lg p-6 shadow-sm">
-        <h1 className="text-2xl font-bold text-gray-800">Welcome back, John Doe!</h1>
+        <h1 className="text-2xl font-bold text-gray-800">Welcome back, {firstName} {lastName}!</h1>
         <p className="text-gray-600 mt-2">
           Stay informed about upcoming elections and track your voting activity.
         </p>
@@ -28,8 +30,10 @@ export default function VoterMain() {
             <Calendar className="w-8 h-8 text-purple-700" />
           </div>
         </div>
-
-        <div className="bg-green-50 rounded-lg p-6">
+        {verified ? 
+        <button onClick={() => {setRender("VoterVerification")}}>
+        <div className="bg-green-50 rounded-lg p-6 cursor-pointer hover:shadow">
+          
           <div className="flex items-center justify-between">
             <div>
               <p className="text-green-700 font-medium">Voter ID Status</p>
@@ -43,6 +47,27 @@ export default function VoterMain() {
             </div>
           </div>
         </div>
+      </button>
+         : 
+        <button onClick={() => {setRender("VoterVerification")}}>
+        <div className="bg-orange-50 rounded-lg p-6 cursor-pointer hover:shadow">
+          
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-orange-700 font-medium">Voter ID Status</p>
+                <div className="flex items-center mt-1 space-x-2">
+                  <CircleX className="w-5 h-5 text-orange-700" />
+                  <span className="text-xl font-bold text-gray-800">Unverified</span>
+                </div>
+              </div>
+              <div className="w-8 h-8 rounded-full bg-orange-50 flex items-center justify-center">
+                <span className=" font-bold">❌</span>
+              </div>
+            </div>
+          </div>
+        </button>
+        
+        }
 
         <div className="bg-blue-50 rounded-lg p-6">
           <div className="flex items-center justify-between">

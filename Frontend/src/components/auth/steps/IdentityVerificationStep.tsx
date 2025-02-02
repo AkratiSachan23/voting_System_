@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { FileText, Upload } from 'lucide-react';
 import axios from 'axios'
 export interface IdentityInfo {
-    idType: 'aadhar' | 'voter';
+    idType: 'Aadhar Card' | 'Voter Id';
     documentNumber: string;
     selfieUrl: string;
     documentUrl: string;
@@ -22,6 +22,9 @@ export const IdentityVerificationStep: React.FC<Props> = ({
 }) => {
   const [selfiePreview, setSelfiePreview] = useState<string>('');
   const [documentPreview, setDocumentPreview] = useState<string>('');
+  const[selfieUrl, setSelfieUrl] = useState<string>('');
+  const[documentUrl, setDocumentUrl] = useState<string>('');
+
   const {
     register,
     handleSubmit,
@@ -50,25 +53,32 @@ export const IdentityVerificationStep: React.FC<Props> = ({
         const upload = await axios.post('http://localhost:3000/api/v1/upload', formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
-        console.log(upload);
+        
         if(upload.status !== 200){
             alert("Error in file uploading. Please try again!")
+            URL.revokeObjectURL(localPreview);
+            if (type === "selfie") setSelfiePreview('');
+            else setDocumentPreview('');
             return;
         }
-        const fileUrl = upload.data.url;
+        const fileUrl = upload.data.fileUrl;
         if(type === "selfie"){
-          setSelfiePreview(fileUrl);
+          setSelfieUrl(fileUrl);
         }else{
-          setDocumentPreview(fileUrl);
+          setDocumentUrl(fileUrl);
         }
+        URL.revokeObjectURL(localPreview);
       } catch (error) {
         alert("error to connect database")
+        URL.revokeObjectURL(localPreview);
+        if (type === "selfie") setSelfiePreview('');
+        else setDocumentPreview('');
       }
       
   };
 }
   const onSubmit = (data: IdentityInfo) => {
-    updateFormData({ ...data, selfieUrl: selfiePreview, documentUrl: documentPreview });
+    updateFormData({ ...data, selfieUrl: selfieUrl, documentUrl: documentUrl });
     onNext();
   };
 
@@ -83,8 +93,8 @@ export const IdentityVerificationStep: React.FC<Props> = ({
           className="w-full py-2 px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition duration-300"
         >
           <option value="">Select ID type</option>
-          <option value="aadhar">Aadhar Card</option>
-          <option value="voter">Voter ID</option>
+          <option value="Aadhar Card">Aadhar Card</option>
+          <option value="Voter Id">Voter ID</option>
         </select>
         {errors.idType && (
           <p className="mt-1 text-sm text-red-600">{errors.idType.message}</p>
