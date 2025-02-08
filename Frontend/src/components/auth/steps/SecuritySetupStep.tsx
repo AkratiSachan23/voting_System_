@@ -24,7 +24,7 @@ export const SecuritySetupStep: React.FC<Props> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState('');
-
+  
   const {
     register,
     handleSubmit,
