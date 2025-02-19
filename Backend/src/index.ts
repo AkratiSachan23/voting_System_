@@ -10,7 +10,8 @@ import cors from 'cors'
 import { generateVoterIdNumber, extractTextFromImage, getPublicGoogleUrl } from './functions.js';
 import { middleware } from './middleware.js';
 import cookieParser from 'cookie-parser'
-
+// import {ethers} from "ethers"
+// import { KeyManagementServiceClient } from '@google-cloud/kms';
 //console
 
 const app = express();
@@ -18,6 +19,8 @@ const PORT = 3000;
 export const storage = new Storage({keyFilename : 'src/skilled-circle-448817-d1-e3457c9445ad.json'});
 export const bucket = storage.bucket('votingbuck')
 const upload = multer({ storage: multer.memoryStorage() });
+// const kmsWallet = new KeyManagementServiceClient();
+
 app.use(cors({credentials: true, origin: 'http://localhost:5173'}));
 app.use(express.json());
 app.use(cookieParser());
@@ -40,6 +43,8 @@ app.post('/api/v1/signup',async (req : Request,res : Response) => {
     const username = req.body.username;
     const password = req.body.password;
     const email = req.body.email;
+    // let PUBLICkEY = "";
+    // let PRIVATEkEY = "";
     const parsedData = VoterSignupSchema.safeParse({
         firstName,
         lastName,
@@ -64,7 +69,25 @@ app.post('/api/v1/signup',async (req : Request,res : Response) => {
     if(idType === "Aadhar Card"){
         voterId =  generateVoterIdNumber(firstName,lastName,gender,documentNumber,mobile);
     }
-   
+    
+    // try {
+    //     const wallet = ethers.HDNodeWallet.createRandom();
+    //     PRIVATEkEY = wallet.privateKey;
+    //     PUBLICkEY = wallet.address;
+    //     const [result] = await kmsWallet.encrypt({
+    //         name: KEYNAME,
+    //         plaintext: Buffer.from(PRIVATEkEY),
+    //     });
+    //     res.status(200).json({
+    //         message : "Wallet created Successfully"
+    //     })
+    // } catch (error) {
+    //     res.status(500).json({
+    //         message: "Error creating wallet"
+    //     })
+    //     return;
+    // }
+    
     try {
         const existingUser = await voterModel.voterModel.findOne({
             $or: [{email}, { documentNumber }, { mobile }]

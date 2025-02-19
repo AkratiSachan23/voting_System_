@@ -3,6 +3,7 @@ import dotenv from 'dotenv'
 dotenv.config();
 
 const MONOGDB_URL = process.env.MONOGDB_URL;
+
 if(MONOGDB_URL === undefined){
     throw new Error("MONOGDB_URL is not defined");
 }
@@ -13,6 +14,14 @@ if(MONOGDB_URL === undefined){
         console.log("Database not connected", e);
     }
  );
+
+const CounterSchema = new mongoose.Schema({
+    name: { type: String, required: true, unique: true },
+    value: { type: Number, required: true }
+});
+
+const Counter = mongoose.model('Counter', CounterSchema);
+
 
 const VoterSchema = new mongoose.Schema({
     firstName: { type: String, required: true },
@@ -29,9 +38,25 @@ const VoterSchema = new mongoose.Schema({
     password: { type: String, required: true },
     email: { type: String, unique: true, required: true },
     voterId : {type: String , required : true},
-    verified : {type : Boolean , default : false}
+    verified : {type : Boolean , default : false},
+    voterIndex : {type : Number, unique: true}
 });
-
+VoterSchema.pre('save', async function (next) {
+    if (!this.voterIndex) {
+        try {
+            const counter = await Counter.findOneAndUpdate(
+                { name: 'voterIndex' },
+                { $inc: { value: 1 } },
+                { new: true, upsert: true }
+            );
+            this.voterIndex = counter.value;
+        } catch (error) {
+            console.log(error);
+            return 
+        }
+    }
+    next();
+});
 const PartySchema = new mongoose.Schema({
     partyName: { type: String, required: true, unique: true },
     partyAbbreviation: { type: String, required: true, unique: true },

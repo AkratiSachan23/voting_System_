@@ -13,7 +13,7 @@ export const VoterSignupSchema = z.object({
     mobile: z.string().regex(/^\d{10}$/, "Mobile number must be exactly 10 digits"),
     username: z.string().min(3, "Username must be at least 3 characters").max(20, "Username must not exceed 20 characters"),
     password: z.string().min(8, "Password must be at least 8 characters").max(20, "Password must not exceed 20 characters"),
-    email: z.string().email("Invalid email format"),
+    email: z.string().email("Invalid email format")
 });
 
 export const VoterSignInSchema = z.object({
