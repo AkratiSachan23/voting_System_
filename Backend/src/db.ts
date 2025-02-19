@@ -15,12 +15,18 @@ if(MONOGDB_URL === undefined){
     }
  );
 
-const CounterSchema = new mongoose.Schema({
+const VoterCounterSchema = new mongoose.Schema({
     name: { type: String, required: true, unique: true },
     value: { type: Number, required: true }
 });
 
-const Counter = mongoose.model('Counter', CounterSchema);
+const VoterCounter = mongoose.model('VoterCounter', VoterCounterSchema);
+const PartyCounterSchema = new mongoose.Schema({
+    name: { type: String, required: true, unique: true },
+    value: { type: Number, required: true }
+});
+
+const PartyCounter = mongoose.model('PartyCounter', PartyCounterSchema);
 
 
 const VoterSchema = new mongoose.Schema({
@@ -44,7 +50,7 @@ const VoterSchema = new mongoose.Schema({
 VoterSchema.pre('save', async function (next) {
     if (!this.voterIndex) {
         try {
-            const counter = await Counter.findOneAndUpdate(
+            const counter = await VoterCounter.findOneAndUpdate(
                 { name: 'voterIndex' },
                 { $inc: { value: 1 } },
                 { new: true, upsert: true }
@@ -75,12 +81,30 @@ const PartySchema = new mongoose.Schema({
     partyLeaderName: { type: String, required: true },
     manifesto: { type: String, required: true },
     partyConstitution: { type: String, required: true },
+    partyIndex : {type : Number, unique : true},
+    partyId : {type : Number, unique : true}
 })
+PartySchema.pre('save', async function (next) {
+    if (!this.partyIndex) {
+        try {
+            const counter = await PartyCounter.findOneAndUpdate(
+                { name: 'partyIndex' },
+                { $inc: { value: 1 } },
+                { new: true, upsert: true }
+            );
+            this.partyIndex = counter.value;
+        } catch (error) {
+            console.log(error);
+            return 
+        }
+    }
+    next();
+});
 
 const voterModel = mongoose.model("Voter",VoterSchema);
-const partyModle = mongoose.model("Party",PartySchema)
+const partyModel = mongoose.model("Party",PartySchema)
 
 export default {
     voterModel,
-    partyModle
+    partyModel
 }
