@@ -1,5 +1,5 @@
 import express, { Request, Response,NextFunction } from 'express'
-import { VoterSignInSchema, VoterSignupSchema } from './schema.js';
+import { VoterSignInSchema, VoterSignupSchema, PartySignupSchema } from './schema.js';
 import voterModel from './db.js'
 import partyModel from './db.js'
 import bcrypt from 'bcrypt'
@@ -44,6 +44,8 @@ if(MNEOMONIC === undefined){
 }
 const provider = new ethers.JsonRpcProvider(RPC_URL);
 const wallet = new ethers.Wallet(META_PRIVATE_KEY,provider);
+
+//voter routes
 app.post('/api/v1/signup',async (req : Request,res : Response) => {
     const firstName = req.body.firstName;
     const lastName = req.body.lastName;
@@ -334,9 +336,97 @@ app.post('/api/v1/getPublicUrl', async (req : Request,res : Response) => {
     return;
 })
 
-// contract routes
+// party routes
+app.post('/api/v2/signup', async (req : Request , res : Response) => {
+    const partyName = req.body.partyName;
+    const partyAbbreviation = req.body.partyAbbreviation;
+    const dateOfBirth = req.body.dateOfBirth;
+    const address = req.body.address;
+    const gender = req.body.gender;
+    const idType = req.body.idType;
+    const documentNumber = req.body.documentNumber;
+    const symbolUrl = req.body.symbolUrl;
+    const documentUrl = req.body.documentUrl;
+    const mobile = req.body.mobile;
+    const username = req.body.username;
+    const password = req.body.password;
+    const email = req.body.email;
+    const partyLeaderName = req.body.partyLeaderName;
+    const manifesto = req.body.manifesto;
+    const partyConstitution = req.body.partyConstitution;
+    const parsedData = PartySignupSchema.safeParse({
+        partyName,
+        partyAbbreviation,
+        dateOfBirth,
+        address,
+        gender,
+        idType,
+        documentNumber,
+        symbolUrl,
+        documentUrl,
+        mobile,
+        username,
+        password,
+        email,
+        partyLeaderName,
+        manifesto,
+        partyConstitution
+    });
+    if(!parsedData.success){
+        res.status(401).json({message : "Invalid data", errors: parsedData.error.format()});
+        return;
+    }
+    const bcryptPassword = await bcrypt.hash(password,10);
+    let voterId = documentNumber.toString();
+    if(idType === "Aadhar Card"){
+        voterId =  generateVoterIdNumber(partyName,partyAbbreviation,gender,documentNumber,mobile);
+    }
 
-app.post('/api/v2/startElection', async (req : Request, res: Response) =>{
+    try {
+        const existingUser = await partyModel.partyModel.findOne({
+            $or: [{email}, { documentNumber }, { mobile }]
+        });
+
+        if (existingUser) {
+             res.status(400).json({ message: "Email, Mobile or Document Number already exists" });
+             return;
+        }
+        
+        const response = await partyModel.partyModel.create({
+            partyName,
+            partyAbbreviation,
+            dateOfBirth,
+            address,
+            gender,
+            idType,
+            documentNumber : Number(documentNumber),
+            symbolUrl,
+            documentUrl,
+            mobile,
+            username,
+            password: bcryptPassword,
+            email,
+            partyLeaderName,
+            voterId : voterId,
+            manifesto,
+            partyConstitution
+
+        })
+        const token = jwt.sign(voterId,JWT_SECRET_KEY);
+        res.status(200).json({
+            voterId,
+            token,
+            message : "Party register successfully"
+        })
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({message : "party not created"});
+    }
+})
+
+
+// contract routes
+app.post('/api/v3/startElection', async (req : Request, res: Response) =>{
     const contract = new ethers.Contract(CONTRACT_ADDRESS,ContractAbi.abi,wallet);
     try {
         const transaction = await contract.startElection();
@@ -352,7 +442,7 @@ app.post('/api/v2/startElection', async (req : Request, res: Response) =>{
     }
 })
 
-app.post('/api/v2/endElection', async (req : Request, res: Response) =>{
+app.post('/api/v3/endElection', async (req : Request, res: Response) =>{
     const contract = new ethers.Contract(CONTRACT_ADDRESS,ContractAbi.abi,wallet);
     try {
         const transaction = await contract.endElection();
@@ -375,7 +465,7 @@ app.post('/api/v2/endElection', async (req : Request, res: Response) =>{
     }
 })
 
-app.post('/api/v2/resetElection', async (req : Request, res: Response) =>{
+app.post('/api/v3/resetElection', async (req : Request, res: Response) =>{
     const contract = new ethers.Contract(CONTRACT_ADDRESS,ContractAbi.abi,wallet);
     try {
         const transaction = await contract.endElection();
@@ -393,7 +483,7 @@ app.post('/api/v2/resetElection', async (req : Request, res: Response) =>{
     }
 })
 
-app.post('/api/v2/addParty',middleware, async (req :Request , res: Response) => {
+app.post('/api/v3/addParty',middleware, async (req :Request , res: Response) => {
     const voterId = req.body.voterId;
     const partyName = req.body.partyName;
     try {
@@ -435,7 +525,7 @@ app.post('/api/v2/addParty',middleware, async (req :Request , res: Response) => 
     }
 })
 
-app.post('/api/v2/removeParty',middleware, async (req: Request, res : Response) => {
+app.post('/api/v3/removeParty',middleware, async (req: Request, res : Response) => {
     const voterId = req.body.voterId;
     try {
         const party = await partyModel.partyModel.findOne({voterId});
@@ -469,7 +559,7 @@ app.post('/api/v2/removeParty',middleware, async (req: Request, res : Response) 
     }
 })
 
-app.post('/api/v2/registerVoter',middleware, async (req : Request, res : Response) => {
+app.post('/api/v3/registerVoter',middleware, async (req : Request, res : Response) => {
     const voterId = req.body.voterId;
     try {
         const voter = await voterModel.voterModel.findOne({voterId});
@@ -508,7 +598,7 @@ app.post('/api/v2/registerVoter',middleware, async (req : Request, res : Respons
     }
 })
 
-app.post('/api/v2/blockVoter', async(req : Request, res : Response) => {
+app.post('/api/v3/blockVoter', async(req : Request, res : Response) => {
     const voterId = req.body.voterId;
     try {
         const voter = await voterModel.voterModel.findOne({voterId});
@@ -545,7 +635,7 @@ app.post('/api/v2/blockVoter', async(req : Request, res : Response) => {
     }
 })
 
-app.post('/api/v2/unblockVoter', async(req : Request , res : Response) => {
+app.post('/api/v3/unblockVoter', async(req : Request , res : Response) => {
     const voterId = req.body.voterId;
     try {
         const voter = await voterModel.voterModel.findOne({voterId});
@@ -583,7 +673,7 @@ app.post('/api/v2/unblockVoter', async(req : Request , res : Response) => {
 })
 
 //token management
-app.post('/api/v2/mintToken', async(req : Request, res : Response) => {
+app.post('/api/v3/mintToken', async(req : Request, res : Response) => {
     const voterId = req.body.voterId;
     try {
         const voter = await voterModel.voterModel.findOne({voterId});
@@ -622,7 +712,7 @@ app.post('/api/v2/mintToken', async(req : Request, res : Response) => {
 
 })
 
-app.post('/api/v2/distributeTokens', async(req : Request, res : Response) => {
+app.post('/api/v3/distributeTokens', async(req : Request, res : Response) => {
     try {
         const contract = new ethers.Contract(CONTRACT_ADDRESS,ContractAbi.abi, wallet);
         const voterAddresses = await contract.voterAddresses;

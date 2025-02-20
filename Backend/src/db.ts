@@ -66,7 +66,7 @@ VoterSchema.pre('save', async function (next) {
 const PartySchema = new mongoose.Schema({
     partyName: { type: String, required: true, unique: true },
     partyAbbreviation: { type: String, required: true, unique: true },
-    dateOfBirth: { type: Date, required: true },
+    dateOfBirth: { type: String, required: true },
     address: { type: String, required: true },
     gender: { type: String, required: true },
     idType: { type: String, required: true },
