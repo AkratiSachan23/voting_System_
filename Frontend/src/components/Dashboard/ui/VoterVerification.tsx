@@ -73,6 +73,14 @@ export default function VoterVerification({setRender} : {setRender : (render : s
                 file : voter.documentUrl
             });
             if(verification.data.verified){
+                const registerVoter = await axios.post('http://localhost:3000/api/v3/registerVoter',{
+                  withCrendentials : true
+                })
+                if(registerVoter.status !== 200){
+                  alert("Verification failed. Please try again later.")
+                  setRender("VoterMain")
+                  return;
+                }
                 alert("Congratulation! You have been verified");
                 setRender("VoterMain");
             }

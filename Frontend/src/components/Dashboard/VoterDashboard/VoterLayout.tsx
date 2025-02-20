@@ -6,7 +6,7 @@ import {
   Settings, 
   Sun, 
   Moon,
-  History, 
+  UsersRound , 
   Calendar, 
   UserCheck, 
   Search, 
@@ -28,7 +28,7 @@ export default function VoterLayout({ children, firstName, lastName }: LayoutPro
   const [isDarkMode, setIsDarkMode] = useState(false);
    console.log("firstName", firstName, lastName);
   const navItems = [
-    { icon: <History className="w-5 h-5" />, label: 'Voting History', href: '#' },
+    { icon: <UsersRound className="w-5 h-5" />, label: 'Registered Parties', href: '/voter/dashboard/registeredParties' },
     { icon: <Calendar className="w-5 h-5" />, label: 'Upcoming Elections', href: '#' },
     { icon: <UserCheck className="w-5 h-5" />, label: 'Voter ID Verification', href: '#' },
     { icon: <Search className="w-5 h-5" />, label: 'Party/Candidate Info', href: '#' },
