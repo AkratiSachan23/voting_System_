@@ -39,3 +39,8 @@ export const PartySignupSchema = z.object({
     manifesto : z.string().url("Invalid manifesto URL"),
     partyConstitution : z.string().url("Invalid party Constitution URL")
 })
+
+export const PartySigninSchema = z.object({
+    userName : z.string().min(3,"Party name must be at least 3 characters").max(30,"Party name must not exceed 30 characters"),
+    password: z.string().min(8, "Password must be at least 8 characters").max(20, "Password must not exceed 20 characters")
+})

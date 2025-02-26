@@ -1,5 +1,5 @@
-import express, { Request, Response,NextFunction } from 'express'
-import { VoterSignInSchema, VoterSignupSchema, PartySignupSchema } from './schema.js';
+import express, { Request, Response} from 'express'
+import { VoterSignInSchema, VoterSignupSchema, PartySignupSchema , PartySigninSchema } from './schema.js';
 import voterModel from './db.js'
 import partyModel from './db.js'
 import bcrypt from 'bcrypt'
@@ -11,8 +11,8 @@ import cors from 'cors'
 import { generateVoterIdNumber, extractTextFromImage, getPublicGoogleUrl } from './functions.js';
 import { middleware } from './middleware.js';
 import cookieParser from 'cookie-parser'
-import {ethers} from 'ethers'
-import ContractAbi from '../ABIs/Voting.json' assert {type : "json"};
+import { addParty, blockVoter, distributeTokens, endElection, getPartyStatus, getTotalParties, getTotalVoters, getTotalVotes, getVoterAddresses, getVoterStatus, mintTokens, registerVoter, removeParty, resetElection, results, startElection, unblockVoter, vote } from './contract.js';
+import { PythonShell } from "python-shell";
 const app = express();
 const PORT = 3000;
 export const storage = new Storage({keyFilename : 'src/skilled-circle-448817-d1-e3457c9445ad.json'});
@@ -22,29 +22,9 @@ app.use(cors({credentials: true, origin: 'http://localhost:5173'}));
 app.use(express.json());
 app.use(cookieParser());
 const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY;
-const RPC_URL = process.env.RPC_URL;
-const META_PRIVATE_KEY = process.env.META_PRIVATE_KEY;
-const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS;
-const MNEOMONICString :string = process.env.MNEOMONIC as string;
-const MNEOMONIC = ethers.Mnemonic.fromPhrase(MNEOMONICString);
 if(JWT_SECRET_KEY === undefined){
     throw new Error("JWT_SECRET_KEY is not defined");
 }
-if(RPC_URL === undefined){
-    throw new Error("RPC_URL is not defined")
-}
-if(META_PRIVATE_KEY === undefined){
-    throw new Error("META_PRIVATE_KEY is not defined")
-}
-if(CONTRACT_ADDRESS === undefined){
-    throw new Error("CONTRACT_ADDRESS is not defined");
-}
-if(MNEOMONIC === undefined){
-    throw new Error("MNEOMONIC is not defined");
-}
-const provider = new ethers.JsonRpcProvider(RPC_URL);
-const wallet = new ethers.Wallet(META_PRIVATE_KEY,provider);
-
 //voter routes
 app.post('/api/v1/signup',async (req : Request,res : Response) => {
     const firstName = req.body.firstName;
@@ -122,7 +102,6 @@ app.post('/api/v1/signup',async (req : Request,res : Response) => {
         res.status(500).json({message : "User not created"});
     }
 });
-
 app.post('/api/v1/signin',async (req : Request,res : Response) => {
     const data = req.body;
     const parsedData = VoterSignInSchema.safeParse(data);
@@ -171,7 +150,6 @@ app.post('/api/v1/signin',async (req : Request,res : Response) => {
     }
 
 });
-
 app.post('/api/v1/upload', upload.single('file'), async (req: Request, res : Response) => {
     if (!req.file) {
        res.status(400).send('No file uploaded');
@@ -192,8 +170,7 @@ app.post('/api/v1/upload', upload.single('file'), async (req: Request, res : Res
     });
   
     blobStream.end(req.file.buffer);
-  });
-  
+}); 
 app.post('/api/v1/emailcheck', async (req : Request,res : Response) => {
     const email = req.body.email;
     const user = await voterModel.voterModel.findOne({email});
@@ -206,8 +183,7 @@ app.post('/api/v1/emailcheck', async (req : Request,res : Response) => {
     res.status(300).json({
         email : user.email
     })
-  });
-
+});
 app.post('/api/v1/verify', async (req : Request,res : Response) => {
         try {
             const voterId = req.body.voterId;
@@ -285,8 +261,7 @@ app.post('/api/v1/verify', async (req : Request,res : Response) => {
             return;
         }
         
-    })
-
+})
 app.get('/api/v1/getVoter',middleware ,async(req: Request, res: Response) => {
         const voterId = req.body.voterId;
         if(!voterId){
@@ -314,7 +289,6 @@ app.get('/api/v1/getVoter',middleware ,async(req: Request, res: Response) => {
              return;
         }
 })
-
 app.post('/api/v1/getPublicUrl', async (req : Request,res : Response) => {
     const file = req.body.file;
     if(!file){
@@ -335,8 +309,47 @@ app.post('/api/v1/getPublicUrl', async (req : Request,res : Response) => {
     })
     return;
 })
+app.post('/api/v1/verifyVoter', async(req : Request, res: Response) => {
+    const voterId = req.body.voterId;
+    try {
+        const voter = await voterModel.voterModel.findOne({voterId});
+        if(!voter){
+            res.status(401).json({
+                message : "No voter found"
+            })
+            return;
+        }
+        const file = voter.selfieUrl;
+        const signedFile = await getPublicGoogleUrl(file);
+        res.status(300).json({
+            signedFile : signedFile
+        })
+        const options : any = {
+            mode : "text",
+            pythonPath: "D:\\Programs\\python.exe",
+            scriptPath: "./dist/",
+            args: [signedFile],
+        }
+        const pythonScript = await PythonShell.run("voterVerification.py",options);
+        if(!pythonScript){
+            res.status(500).json({
+                message : "Error in pythonScript"
+            })
+            return;
+        }
+        res.status(200).json({
+            message : "Voter verified successfully"
+        })
+
+    } catch (error) {
+        res.status(500).json({
+            message : "Internal server error"
+        })
+    }
+})
 
 // party routes
+
 app.post('/api/v2/signup', async (req : Request , res : Response) => {
     const partyName = req.body.partyName;
     const partyAbbreviation = req.body.partyAbbreviation;
@@ -423,109 +436,155 @@ app.post('/api/v2/signup', async (req : Request , res : Response) => {
         res.status(500).json({message : "party not created"});
     }
 })
-
-
-// contract routes
-app.post('/api/v3/startElection', async (req : Request, res: Response) =>{
-    const contract = new ethers.Contract(CONTRACT_ADDRESS,ContractAbi.abi,wallet);
-    try {
-        const transaction = await contract.startElection();
-        await transaction.wait();
-        res.status(200).json({
-            message : "Election started successfully"
-        })
-    } catch (error) {
-        res.status(500).json({
-            message: "Election not started"
+app.post('/api/v2/signin', async (req : Request, res : Response) => {
+    const data = req.body;
+    const parsedData = PartySigninSchema.safeParse(data);
+    if(!parsedData.success){
+        res.status(401).json({
+            message : "Invalid data. Please check credentials"
         })
         return;
     }
-})
-
-app.post('/api/v3/endElection', async (req : Request, res: Response) =>{
-    const contract = new ethers.Contract(CONTRACT_ADDRESS,ContractAbi.abi,wallet);
+    const {username , password} = data;
+    const voterId = username;
     try {
-        const transaction = await contract.endElection();
-        await transaction.wait();
-        contract.once("ElectionEnded",(winningPartyId, winningPartyName, highestVotes) =>{
-            res.status(200).json({
-                message : "Election ended successfully",
-                winningPartyId : winningPartyId.toString(),
-                winningPartyName : winningPartyName,
-                highestVotes : highestVotes.toString()
-            })
-        })
-        return;
-    } catch (error) {
-        res.status(500).json({
-            message: "Election not ended"
-        })
-        console.log(error)
-        return;
-    }
-})
-
-app.post('/api/v3/resetElection', async (req : Request, res: Response) =>{
-    const contract = new ethers.Contract(CONTRACT_ADDRESS,ContractAbi.abi,wallet);
-    try {
-        const transaction = await contract.endElection();
-        await transaction.wait();
-        res.status(200).json({
-            message : "Election reset successfully"
-        })
-        return;
-    } catch (error) {
-        res.status(500).json({
-            message: "Election not reseted"
-        })
-        console.log(error)
-        return;
-    }
-})
-
-app.post('/api/v3/addParty',middleware, async (req :Request , res: Response) => {
-    const voterId = req.body.voterId;
-    const partyName = req.body.partyName;
-    try {
-        
-        const response = await partyModel.partyModel.findOne({voterId});
-        if (!response) {
-            res.status(404).json({ message: "Party not found" });
+        const party = await partyModel.partyModel.findOne(
+            {
+                $or : [
+                    {username},
+                    {voterId}
+                ]
+            }
+        );
+        if(!party){
+            res.status(401).json({
+                message : "No party found. Please check you credentials"
+             })
+             return;
+        }
+        const isPasswordValid = await bcrypt.compare(password,party.password);
+        if(!isPasswordValid) {
+            res.status(401).json({
+                message : "Invalid password. Please try again!"
+            });
             return;
         }
-        const partyIndex = response.partyIndex;
-        const hdNode = ethers.HDNodeWallet.fromMnemonic(MNEOMONIC,`m/44'/60'/0'/0/${partyIndex}`)
-        const privateKey = hdNode.privateKey;
-        const signer = new ethers.Wallet(privateKey, provider);
-        const contract = new ethers.Contract(CONTRACT_ADDRESS,ContractAbi.abi,signer);
-        const transaction = await contract.addParty(partyName);
-        await transaction.wait();
-        contract.once("PartyAdded", async (totalParties, _name)=> {
-            const updatedParty = await partyModel.partyModel.findOneAndUpdate(
-                { voterId },
-                { $set: { partyId: totalParties.toString() } },
-                { new: true }
-            );
-            if(!updatedParty){
-                res.status(500).json({ message: "Party ID not updated successfully" });
-                return;
-            }
-            res.status(200).json({
-                message : "Party added successfully",
-                partyId : totalParties,
-                name : _name
-            })
+
+        const token = jwt.sign(party.voterId,JWT_SECRET_KEY);
+        res.status(200).json({
+            token,
+            message : "you are logged in successfully"
         })
-        return;
+
     } catch (error) {
-        res.status(500).json({
-            message : "Party not added"
+        res.status(401).json({
+            message : "No voter found. Please register yourself first"
         })
         return;
     }
 })
 
-app.post('/api/v3/removeParty',middleware, async (req: Request, res : Response) => {
+// contract routes
+
+app.post('/api/v3/startElection', async (req : Request, res: Response) =>{
+    const duration = req.body.duration;
+    try {
+        const transaction = await startElection(Number(duration));
+        res.status(200).json({
+            message : "Election started successfully",
+            transactionHash : transaction
+        })
+    } catch (error) {
+        res.status(500).json({
+            message: "Election not started",
+            error : error
+        })
+        return;
+    }
+})
+app.post('/api/v3/endElection', async (req : Request, res: Response) =>{
+    try {
+        const transaction = await endElection();
+        res.status(200).json({
+            message : "Election ended successfully",
+            transactionHash : transaction
+        })
+    } catch (error) {
+        res.status(500).json({
+            message: "Election not ended",
+            error : error
+        })
+        return;
+    }
+})
+app.get('/api/v3/results', async (req : Request , res : Response) => {
+    try {
+        const transaction = await results()
+        res.status(200).json({
+            message : "Results fetched successfully",
+            winningPartyId : transaction.winningPartyId, 
+            winningPartyName : transaction.winningPartyName, 
+            highestVotes :transaction.highestVotes
+        })
+    } catch (error) {
+        res.status(500).json({
+            message : "Resuls not fetched",
+            error : error
+        })
+        return;
+    }
+})
+app.post('/api/v3/resetElection', async (req : Request, res: Response) =>{
+    try {
+        const transaction = await resetElection();
+        res.status(200).json({
+            message : "Election reset successfully",
+            transactionHash : transaction
+        })
+    } catch (error) {
+        res.status(500).json({
+            message: "Election not reseted",
+            error : error
+        })
+        return;
+    }
+})
+app.post('/api/v3/addParty', async (req :Request , res: Response) => {
+    const partyId = req.body.partyId;
+    const partyName = req.body.partyName;
+    try {
+        const party = await partyModel.partyModel.findOne(
+            {
+                voterId : partyId
+            }
+        )
+        if(!party){
+            res.status(400).json({
+                message : "Party not found"
+            })
+            return;
+        }
+        const partyIndex = party.partyIndex;
+        if(!partyIndex){
+            res.status(400).json({
+                message : "Party index not found"
+            })
+            return;
+        }
+        const transaction = await addParty(partyIndex,partyName);
+        res.status(200).json({
+            message : "Party added successfully",
+            transactionHash : transaction
+        })
+    } catch (error) {
+        res.status(500).json({
+            message : "Party not added",
+            error : error
+        })
+        return;
+    }
+})
+app.post('/api/v3/removeParty',async (req: Request, res : Response) => {
     const voterId = req.body.voterId;
     try {
         const party = await partyModel.partyModel.findOne({voterId});
@@ -536,29 +595,25 @@ app.post('/api/v3/removeParty',middleware, async (req: Request, res : Response) 
             return;
         }
         const partyIndex = party.partyIndex;
-        const contract = new ethers.Contract(CONTRACT_ADDRESS,ContractAbi.abi,wallet);
-        const transaction = await contract.removeParty(partyIndex);
-        await transaction.wait();
-        contract.once("PartyRemoved",(_partyId) => {
-            if(!_partyId){
-                res.status(500).json({
-                    message : "Party not found/removed"
-                })
-            }
-            res.status(200).json({
-                message : "Party removed successfully",
-                partyId : _partyId
+        if(!partyIndex){
+            res.status(404).json({
+                message : "Party index not found"
             })
+            return;
+        }
+        const transaction = await removeParty(partyIndex);
+        res.status(200).json({
+            message : "Party removed successfully",
+            transactionHash : transaction
         })
-        return;
     } catch (error) {
         res.status(500).json({
-            message: "Party not removed successfully"
+            message: "Party not removed successfully",
+            error : error
         })
         return;
     }
 })
-
 app.post('/api/v3/registerVoter',middleware, async (req : Request, res : Response) => {
     const voterId = req.body.voterId;
     try {
@@ -569,35 +624,24 @@ app.post('/api/v3/registerVoter',middleware, async (req : Request, res : Respons
             })
             return;
         }
-        const voterIndex = voter?.voterIndex;
-        if(!voterIndex){
-            res.status(404).json({
-                message : "voter Index not found"
-            })
-            return;
+        const voterIndex = voter.voterIndex;
+        if (voterIndex === undefined || voterIndex === null) {
+             res.status(404).json({ message: "Voter index not found" });
+             return;
         }
-        const hdNode = ethers.HDNodeWallet.fromMnemonic(MNEOMONIC,`m/44'/60'/0'/0/${voterIndex}`);
-        const privateKey = hdNode.privateKey;
-        const signer = new ethers.Wallet(privateKey, provider);
-        const contract = new ethers.Contract(CONTRACT_ADDRESS,ContractAbi.abi,signer);
-        const transaction = await contract.registerVoter(privateKey);
-        await transaction.wait();
-        contract.once("VoterRegisterd",(_voter) => {
-            res.status(200).json({
-                message : "Voter registerd successfully",
-                voter : _voter
-            })
+        const transaction = await registerVoter(voterIndex);
+        res.status(200).json({
+            message : "Voter registered successfully",
+            transactionHash : transaction
         })
-        return;
-
     } catch (error) {
         res.status(500).json({
-            message : "Voter not registerd"
+            message : "Voter not registerd",
+            error : error
         })
         return;
     }
 })
-
 app.post('/api/v3/blockVoter', async(req : Request, res : Response) => {
     const voterId = req.body.voterId;
     try {
@@ -609,70 +653,58 @@ app.post('/api/v3/blockVoter', async(req : Request, res : Response) => {
             return;
         }
         const voterIndex = voter.voterIndex;
-        const hdNode = ethers.HDNodeWallet.fromMnemonic(MNEOMONIC,`m/44'/60'/0'/0/${voterIndex}`);
-        const privateKey = hdNode.privateKey;
-        const contract = new ethers.Contract(CONTRACT_ADDRESS,ContractAbi.abi, wallet);
-        const transaction = await contract.blockVoter(privateKey);
-        await transaction.wait();
-        contract.once("VoterBlocked",(_voter) => {
-            if(!_voter){
-                res.status(500).json({
-                    message : "Voter not blocked/registerd"
-                })
-                return;
-            }
-            res.status(200).json({
-                message : "Voter blocked successfully",
-                voter : _voter
+        if(!voterIndex){
+            res.status(404).json({
+                message : "Voter index not found"
             })
+            return;
+        }
+        const transaction = await blockVoter(voterIndex);
+        res.status(200).json({
+            message : "Voter blocked successfully",
+            transactionHash : transaction
         })
-        return;
     } catch (error) {
         res.status(500).json({
-            message : "Voter not blocked"
+            message : "Voter not blocked",
+            error : error
         })
         return;
     }
 })
-
 app.post('/api/v3/unblockVoter', async(req : Request , res : Response) => {
     const voterId = req.body.voterId;
     try {
         const voter = await voterModel.voterModel.findOne({voterId});
-    if(!voter){
-        res.status(404).json({
-            message : "Voter not found"
-        })
-        return;
-    }
-    const voterIndex = voter.voterIndex;
-    const hdNode = ethers.HDNodeWallet.fromMnemonic(MNEOMONIC,`m/44'/60'/0'/0/${voterIndex}`);
-    const privateKey = hdNode.privateKey;
-    const contract = new ethers.Contract(CONTRACT_ADDRESS,ContractAbi.abi, wallet);
-    const transaction = await contract.unblockVoter(privateKey);
-    await transaction.wait();
-    contract.once("VoterUnblocked",(_voter) => {
-        if(!_voter){
-            res.status(500).json({
-                message : "Voter not unblocked/registerd"
+        if(!voter){
+            res.status(404).json({
+                message : "Voter not found"
             })
             return;
         }
+        const voterIndex = voter.voterIndex;
+        if(!voterIndex){
+            res.status(404).json({
+                message : "Voter index not found"
+            })
+            return;
+        }
+        const transaction = await unblockVoter(voterIndex);
         res.status(200).json({
             message : "Voter unblocked successfully",
-            voter : _voter
+            transactionHash : transaction
         })
-    })
-    return;
-    } catch (error) {
+    }catch (error) {
         res.status(500).json({
-            message : "Voter not unblocked"
+            message : "Voter not unblocked",
+            error : error
         })
         return;
     }
 })
 
 //token management
+
 app.post('/api/v3/mintToken', async(req : Request, res : Response) => {
     const voterId = req.body.voterId;
     try {
@@ -684,58 +716,37 @@ app.post('/api/v3/mintToken', async(req : Request, res : Response) => {
             return;
         }
         const voterIndex = voter.voterIndex;
-        const hdNode = ethers.HDNodeWallet.fromMnemonic(MNEOMONIC,`m/44'/60'/0'/0/${voterIndex}`);
-        const privateKey = hdNode.privateKey;
-        const contract = new ethers.Contract(CONTRACT_ADDRESS,ContractAbi.abi, wallet);
-        const transaction = await contract.mintTokens(privateKey);
-        await transaction.wait();
-        contract.once("TokenMined",(_voter,amount) => {
-            if(amount === undefined || amount === 0){
-                res.status(500).json({
-                    message : "Token not minted/not registered"
-                })
-                return;
-            }
-            res.status(200).json({
-                message : "Token minted successfully",
-                voter : _voter,
-                amount : amount
+        if(!voterIndex){
+            res.status(404).json({
+                message : "Voter index not found"
             })
+            return;
+        }
+        const transaction = await mintTokens(voterIndex);
+        res.status(200).json({
+            message : "Token minted successfully",
+            transactionHash : transaction
         })
-        return;
     } catch (error) {
         res.status(500).json({
-            message : "Token not minted"
+            message : "Token not minted",
+            error : error
         })
         return;
     }   
 
 })
-
 app.post('/api/v3/distributeTokens', async(req : Request, res : Response) => {
     try {
-        const contract = new ethers.Contract(CONTRACT_ADDRESS,ContractAbi.abi, wallet);
-        const voterAddresses = await contract.voterAddresses;
-        const transaction = await contract.distributeTokens(voterAddresses)
-        await transaction.wait();
-        contract.once("TokensDistributed",(_voterAddress,amount) => {
-            if(amount === undefined || amount === 0){
-                res.status(500).json({
-                    message : "Tokens not distributed"
-                })
-                return;
-            }
-            res.status(200).json({
-                message : "Tokens distributed successfully",
-                voterAddress : _voterAddress,
-                amount : amount
-            })
-            
+        const transaction = await distributeTokens();
+        res.status(200).json({
+            message : "Tokens distributed successfully",
+            transactionHash : transaction
         })
-        return;
     } catch (error) {
         res.status(500).json({
-            message : "Tokens not distributed successfully"
+            message : "Tokens not distributed successfully",
+            error : error
         })
         return;
     }
@@ -743,7 +754,7 @@ app.post('/api/v3/distributeTokens', async(req : Request, res : Response) => {
 
 //voting
 
-app.post('/api/v3/vote', async(req : Request, res : Response) => {
+app.post('/api/v3/vote',middleware, async(req : Request, res : Response) => {
     const voterId = req.body.voterId;
     const partyId = req.body.partyId;
     try {
@@ -754,7 +765,7 @@ app.post('/api/v3/vote', async(req : Request, res : Response) => {
             })
             return;
         };
-        const party = await partyModel.partyModel.findOne({partyId});
+        const party = await partyModel.partyModel.findOne({voterId : partyId});
         if(!party){
             res.status(404).json({
                 message : "Party not found"
@@ -762,58 +773,67 @@ app.post('/api/v3/vote', async(req : Request, res : Response) => {
             return;
         }
         const voterIndex = voter.voterIndex;
-        const partyChainId = party.partyId
-        const hdNode = ethers.HDNodeWallet.fromMnemonic(MNEOMONIC,`m/44'/60'/0'/0/${voterIndex}`);
-        const privateKey = hdNode.privateKey;
-        const signer = new ethers.Wallet(privateKey, provider);
-        const contract = new ethers.Contract(CONTRACT_ADDRESS,ContractAbi.abi, signer);
-        const transaction = await contract.vote(partyChainId);
-        await transaction.wait();
-        contract.once("Voted",(voter, partyId) => {
-            res.status(200).json({
-                message : "Voted successfully",
-                voter : voter,
-                partyId : partyId
+        const partyChainId = party.partyIndex;
+        if(voterIndex === undefined || voterIndex === null || partyChainId === undefined || partyChainId === null){
+            res.status(404).json({
+                message : "Voter index or party chain id not found"
             })
+            return;
+        }
+        const transaction = await vote(partyChainId, voterIndex);
+        res.status(200).json({
+            message : "Voted successfully",
+            transactionHash : transaction
         })
-        return;
-
     } catch (error) {
         res.status(500).json({
-            message : "Voter not voted successfully"
+            message : "Voter not voted successfully",
+            error : error
         })
         return;
     }
 })
 
-app.get('/api/v3/PartyVotes', async (req : Request, res : Response) => {
-    const partyId = req.body.partyId;
+//helper functions
+
+app.get('/api/v3/partyStatus', async (req : Request, res : Response) => {
+    const partyId = req.query.partyId;
+    if (!partyId) {
+        res.status(400).json({ message: "Missing partyId parameter" });
+        return;
+    }
     try {
-        const party = await partyModel.partyModel.findOne({partyId});
+        const party = await partyModel.partyModel.findOne({voterId : partyId});
         if(!party){
             res.status(404).json({
                 message : "Party not found"
             });
             return;
         }
-        const partyChainId = party.partyId
-        const contract = new ethers.Contract(CONTRACT_ADDRESS,ContractAbi.abi, wallet);
-        const votes = await contract.getPartyVotes(partyChainId);
+        const partyIndex = Number(party.partyIndex)
+        if (isNaN(partyIndex)) {
+            res.status(400).json({ message: "Invalid party index" });
+            return
+        }
+        const transaction = await getPartyStatus(partyIndex);
+        console.log("transaction",transaction)
         res.status(200).json({
-            message : "Get votes successfully",
-            votes : votes
+            message : "Get status successfully",
+            id : transaction.id,
+            name : transaction.name,
+            voteCount : transaction.voteCount,
+            exists : transaction.exists
         })
-        return;
     } catch (error) {
         res.status(500).json({
-            message : "Votes not fetched successfully"
+            message : "Votes not fetched successfully",
+            error : error
         })
         return;
     }
 })
-
-app.get('/api/v3/VoterStatus',middleware, async (req : Request , res : Response) => {
-    const voterId = req.body.voterId;
+app.get('/api/v3/voterStatus',middleware, async (req : Request , res : Response) => {
+    const voterId = req.query.voterId as string;
     try {
         const voter = await voterModel.voterModel.findOne({voterId});
         if(!voter) {
@@ -823,24 +843,88 @@ app.get('/api/v3/VoterStatus',middleware, async (req : Request , res : Response)
             return;
         }
         const voterIndex = voter.voterIndex
-        const hdNode = ethers.HDNodeWallet.fromMnemonic(MNEOMONIC,`m/44'/60'/0'/0/${voterIndex}`);
-        const privateKey = hdNode.privateKey;
-        const contract = new ethers.Contract(CONTRACT_ADDRESS,ContractAbi.abi, wallet);
-        const {isRegistered, isBlocked, hasVoted , allocatedToken} = await contract.getVoterStatus(privateKey)
+        if(!voterIndex){
+            res.status(404).json({
+                message : "Voter index not found"
+            })
+            return;
+        }
+        const transaction = await getVoterStatus(voterIndex);
         res.status(200).json({
             message : "Voter status fetched successfully",
-            isRegistered,
-            isBlocked,
-            hasVoted,
-            allocatedToken
+            isRegistered : transaction.isRegistered,
+            isBlocked : transaction.isBlocked,
+            hasVoted : transaction.hasVoted,
+            allocatedTokens : transaction.allocatedTokens
         });
-        return;
     } catch (error) {
         res.status(500).json({
-            message : "Voter status not fetched successfully"
+            message : "Voter status not fetched successfully",
+            error : error
         })
         return;
     }
+})
+app.get('/api/v3/totalVotes', async (req : Request, res : Response) => {
+    try {
+        const transaction = await getTotalVotes();
+        res.status(200).json({
+            message : "Total votes fetched successfully",
+            totalVotes : transaction
+        })
+    } catch (error) {
+        res.status(500).json({
+            message : "Total votes not fetched successfully",
+            error : error
+        })
+        return;
+    }
+})
+app.get('/api/v3/totalVoters', async (req : Request, res : Response) => {
+    try {
+        const transaction = await getTotalVoters();
+        res.status(200).json({
+            message : "Total voters fetched successfully",
+            totalVoters : transaction
+        })
+    } catch (error) {
+        res.status(500).json({
+            message : "Total voters not fetched successfully",
+            error : error
+        })
+        return;
+    }
+})
+app.get('/api/v3/totalParties', async (req : Request , res : Response) => {
+    
+    try {
+        const transaction = await getTotalParties();
+        res.status(200).json({
+            message : "Total parties fetched successfully",
+            totalParties : transaction
+        })
+    } catch (error) {
+        res.status(500).json({
+            message : "Total parties not fetched successfully",
+            error : error
+        })
+        return;
+    }
+})
+app.get('/api/v3/voterAddresses', async(req : Request, res : Response) => {
+    try {
+        const transaction = await getVoterAddresses();
+        res.status(200).json({
+            message : "Voter addresses fetched successfully",
+            voterAddresses : transaction
+        })
+    } catch (error) {
+        res.status(500).json({
+            message : "Voter addresses not fetched successfully",
+            error : error
+        })
+    }
+
 })
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
