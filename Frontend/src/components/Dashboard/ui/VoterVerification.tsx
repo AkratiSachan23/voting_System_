@@ -1,8 +1,9 @@
 import axios from "axios"
 import { useEffect, useState } from "react"
 import DetailItem from "./DetailItem";
-
+import { Skelaton } from "./Skelaton";
 export default function VoterVerification({setRender} : {setRender : (render : string) => void}) {
+  const [loading, setLoading] = useState(false);
     const [voter, setVoter] = useState({
         firstName: "",
         lastName: "",
@@ -64,31 +65,41 @@ export default function VoterVerification({setRender} : {setRender : (render : s
           fetchVoterDetails();
     },[])
     const handleVerification = async () => {
+        setLoading(true);
         try {
             const verification = await axios.post('http://localhost:3000/api/v1/verify', {
                 voterId: voter.voterId,
                 file : voter.documentUrl
             });
-            if(verification.data.verified){
-                const registerVoter = await axios.post('http://localhost:3000/api/v3/registerVoter',{
-                  withCrendentials : true
-                })
+            if(verification.status !==200){
+              alert("Credentials mis-match. Please check again!")
+              setLoading(false);
+              return;
+            }
+                const registerVoter = await axios.post('http://localhost:3000/api/v3/registerVoter',
+                  {},
+                  {withCredentials : true}
+                )
                 if(registerVoter.status !== 200){
-                  alert("Verification failed. Please try again later.")
+                  alert(registerVoter.data.message)
                   setRender("VoterMain")
+                  setLoading(false);
                   return;
                 }
                 alert("Congratulation! You have been verified");
                 setRender("VoterMain");
-            }
-        } catch (error) {
-            alert("Profile verification failed. Please try again later.")
+        } catch (error : any) {
+            const errorMsg = await error.response.data.message
+            alert(errorMsg)
             setRender("VoterMain")
+        } finally{
+          setLoading(false);
         }
         
 
     }
   return (
+    loading ? <Skelaton /> :
     <div className="min-h-screen bg-white">
         <main className="container mx-auto p-4 md:p-8">
         <div className="bg-white rounded-lg shadow-lg p-6 md:p-8">
@@ -128,5 +139,5 @@ export default function VoterVerification({setRender} : {setRender : (render : s
         </div>
       </main>
     </div>
-  )
+    )
 }

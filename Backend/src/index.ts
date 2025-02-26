@@ -523,6 +523,33 @@ app.post('/api/v2/signin', async (req : Request, res : Response) => {
         return;
     }
 })
+app.get('/api/v2/parties', async (req : Request, res : Response) => {
+    try {
+        const parties = await partyModel.partyModel.find().select({
+            _id : 1,
+            partyName : 1,
+            partyAbbreviation : 1,
+            address : 1,
+            partyLeaderName: 1,
+            symbolUrl : 1
+        });
+        if(!parties){
+            res.status(401).json({
+                message : "No parties found"
+            })
+            return;
+        }
+        res.status(200).json({
+            parties
+
+        })
+    } catch (error) {
+        res.status(500).json({
+            message : "Internal server error"
+        })
+    }
+        
+})
 
 // contract routes
 
@@ -661,6 +688,12 @@ app.post('/api/v3/registerVoter',middleware, async (req : Request, res : Respons
         if(!voter){
             res.status(404).json({
                 message : "Voter not found"
+            })
+            return;
+        }
+        if(voter.verified){
+            res.status(404).json({
+                message : "Voter already registered"
             })
             return;
         }
