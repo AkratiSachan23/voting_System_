@@ -26,7 +26,6 @@ interface LayoutProps {
 export default function VoterLayout({ children, firstName, lastName }: LayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isDarkMode, setIsDarkMode] = useState(false);
-   console.log("firstName", firstName, lastName);
   const navItems = [
     { icon: <UsersRound className="w-5 h-5" />, label: 'Registered Parties', href: '/voter/dashboard/registeredParties' },
     { icon: <Calendar className="w-5 h-5" />, label: 'Upcoming Elections', href: '#' },

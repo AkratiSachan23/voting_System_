@@ -145,7 +145,7 @@ export const IdentityVerificationStep: React.FC<Props> = ({
                 <input
                   type="file"
                   className="sr-only"
-                  accept="image/*"
+                  accept="image/png, image/jpg, image/jpeg"
                   onChange={(e) => {
                     handleFileChange(e,"selfie")
                   } }

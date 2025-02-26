@@ -347,6 +347,46 @@ app.post('/api/v1/verifyVoter', async(req : Request, res: Response) => {
         })
     }
 })
+app.put('/api/v1/updateUrl',middleware,async(req : Request , res : Response) => {
+    const { voterId, label, value: file } = req.body;
+    if (!voterId) {
+        res.status(400).json({ message: "No voterId provided" });
+        return;
+    }
+    if (!label) {
+        res.status(400).json({ message: "No label provided" });
+        return;
+    }
+    const formattedLabel = label.toLowerCase().split(' ')[0];
+    const fieldToUpdate = formattedLabel + "Url";
+    try {
+        const updatedVoter = await voterModel.voterModel.findOneAndUpdate({
+            voterId
+        }, {
+            $set : {
+                [fieldToUpdate]: file
+            }
+        },{
+            new : true
+        })
+        if(!updatedVoter){
+            res.status(401).json({
+                message : "No voter found"
+            });
+            return;
+        }
+        res.status(200).json({
+            message : "Url updated successfully",
+            UpdatedUrl : updatedVoter
+        })
+    } catch (error) {
+        res.status(500).json({
+            message : "Internal server error",
+            error : error
+        })
+    }
+})
+
 
 // party routes
 

@@ -24,10 +24,8 @@ export default function VoterVerification({setRender} : {setRender : (render : s
             "http://localhost:3000/api/v1/getPublicUrl",
             { file }
           );
-      
           return response.data.url;
         } catch (error) {
-          console.error("Error fetching URL:", error);
           alert("Failed to fetch document URL. Please try again later.");
           return "";
         }
@@ -60,7 +58,6 @@ export default function VoterVerification({setRender} : {setRender : (render : s
                 documentUrl: documentUrl
               });
             } catch (error) {
-              console.error("Error fetching voter details:", error);
               alert("Internal Server Error. Please try again later.");
             }
           };
