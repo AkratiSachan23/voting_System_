@@ -8,33 +8,32 @@ import {
   Moon,
   UsersRound , 
   Calendar, 
-  UserCheck, 
-  Search, 
   BarChart2, 
   TrendingUp, 
   Share2, 
   Menu, 
-  X 
+  X ,
+  House
 } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
   firstName : string;
   lastName : string;
+  setRender : (render : string) => void;
 }
 
-export default function VoterLayout({ children, firstName, lastName }: LayoutProps) {
+export default function VoterLayout({ children, firstName, lastName, setRender }: LayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const navItems = [
-    { icon: <UsersRound className="w-5 h-5" />, label: 'Registered Parties', href: '/voter/dashboard/registeredParties' },
-    { icon: <Calendar className="w-5 h-5" />, label: 'Upcoming Elections', href: '#' },
-    { icon: <UserCheck className="w-5 h-5" />, label: 'Voter ID Verification', href: '#' },
-    { icon: <Search className="w-5 h-5" />, label: 'Party/Candidate Info', href: '#' },
-    { icon: <BarChart2 className="w-5 h-5" />, label: 'Voting Analytics', href: '#' },
-    { icon: <TrendingUp className="w-5 h-5" />, label: 'Poll Results', href: '#' },
-    { icon: <Share2 className="w-5 h-5" />, label: 'Social Media', href: '#' },
-    { icon: <Settings className="w-5 h-5" />, label: 'Settings', href: '#' },
+    { icon: <House className="w-5 h-5" />, label: 'Home'},
+    { icon: <UsersRound className="w-5 h-5" />, label: 'Registered Parties'},
+    { icon: <Calendar className="w-5 h-5" />, label: 'Upcoming Elections'},
+    { icon: <BarChart2 className="w-5 h-5" />, label: 'Voting Analytics'},
+    { icon: <TrendingUp className="w-5 h-5" />, label: 'Poll Results'},
+    { icon: <Share2 className="w-5 h-5" />, label: 'Social Media'},
+    { icon: <Settings className="w-5 h-5" />, label: 'Settings'},
   ];
 
   return (
@@ -85,14 +84,13 @@ export default function VoterLayout({ children, firstName, lastName }: LayoutPro
           <ul className="space-y-2">
             {navItems.map((item, index) => (
               <li key={index}>
-                <a
-                  href={item.href}
-                  className="flex items-center space-x-3 px-4 py-3 text-gray-700 rounded-lg
+                <button onClick={() => setRender(item.label)}
+                  className="flex items-center space-x-3 px-4 py-3 text-gray-700 rounded-lg hover:cursor-pointer
                     hover:bg-purple-50 hover:text-purple-700 transition-colors duration-200"
                 >
                   {item.icon}
                   <span>{item.label}</span>
-                </a>
+                </button>
               </li>
             ))}
           </ul>

@@ -8,6 +8,8 @@ export type PartyListProps = {
     address: string
     partyLeaderName: string
     symbolUrl: string
+    manifesto : string
+    partyConstitution : string
   }
   
 export default function PartyList({ parties }: {parties : PartyListProps[]}) {

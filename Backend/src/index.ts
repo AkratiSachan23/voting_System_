@@ -387,6 +387,49 @@ app.put('/api/v1/updateUrl',middleware,async(req : Request , res : Response) => 
     }
 })
 
+app.put('/api/v1/updateProfile',middleware, async (req : Request, res : Response) => {
+    const {voterId,firstName,lastName,idType,gender,address, selfieFile, documentFile} = req.body
+    if(!voterId){
+        res.status(400).json({
+            message : "User is not logged in"
+        })
+        return;
+    }
+    try {
+        const update = await voterModel.voterModel.findOneAndUpdate({
+            voterId
+        },{
+            $set : {
+                firstName,
+                lastName,
+                idType,
+                gender,
+                address,
+                selfieUrl : selfieFile,
+                documentUrl : documentFile
+            }
+        },{
+            new : true
+        })
+        if(!update){
+            res.status(401).json({
+                message : "No voter found"
+            });
+            return;
+        }
+        res.status(200).json({
+            message : "Profile updated successfully",
+            UpdatedProfile : update
+        })
+
+    } catch (error) {
+        res.status(500).json({
+            message : "Internal server error",
+            error : error
+        })
+    }
+
+})
 
 // party routes
 
@@ -531,7 +574,9 @@ app.get('/api/v2/parties', async (req : Request, res : Response) => {
             partyAbbreviation : 1,
             address : 1,
             partyLeaderName: 1,
-            symbolUrl : 1
+            symbolUrl : 1,
+            manifesto : 1,
+            partyConstitution : 1
         });
         if(!parties){
             res.status(401).json({

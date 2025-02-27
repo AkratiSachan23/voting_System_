@@ -5,6 +5,8 @@ import VoterMain from './VoterMain.tsx';
 import axios from 'axios';
 import { useState } from 'react';
 import VoterVerification from '../ui/VoterVerification.tsx';
+import RegisteredParties from './RegisteredParties.tsx';
+import VoterSettings from './VoterSettings.tsx';
 function VoterDash() {
   const [ render , setRender] = useState<string>("VoterMain")
   const [firstName, setFirstName] = useState<string>("Unknown");
@@ -35,12 +37,17 @@ function VoterDash() {
       case "VoterVerification":
         return <VoterVerification setRender={setRender}  />;
       case "VoterMain":
+        return <VoterMain verified={verified} firstName={firstName} lastName={lastName} setRender={setRender} />;
+      case "Registered Parties":
+        return <RegisteredParties />;
+      case "Settings" :
+        return <VoterSettings/>;
       default:
         return <VoterMain verified={verified} firstName={firstName} lastName={lastName} setRender={setRender} />;
     }
   };
   return (
-    <VoterLayout firstName={firstName} lastName={lastName}>
+    <VoterLayout firstName={firstName} lastName={lastName} setRender ={setRender}>
         {renderComponent()}
      </VoterLayout>
   );
