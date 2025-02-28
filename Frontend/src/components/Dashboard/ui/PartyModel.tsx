@@ -8,7 +8,7 @@ type PartyModelprops = {
 
 export default function PartyModel({ party, onClose }: PartyModelprops) {
         return(
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="fixed inset-0 backdrop-blur-lg bg-black/40 bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-purple-800 rounded-lg overflow-hidden shadow-2xl w-full max-w-2xl animate-fade-in">
         <div className="relative">
           <button

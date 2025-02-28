@@ -17,8 +17,8 @@ export default function RegisteredParties () {
       getParties();
   },[])
     return (
-        <main className="min-h-screen bg-gradient-to-br from-purple-600 to-purple-800 text-white p-8">
-      <h1 className="text-4xl font-bold mb-8 text-center text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-white">
+        <main className="min-h-screen  text-white p-8">
+      <h1 className="text-4xl font-bold mb-8 text-center text-black bg-clip-text  ">
         Registered Parties
       </h1>
       <PartyList parties={partyList} />

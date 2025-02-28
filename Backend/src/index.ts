@@ -386,7 +386,6 @@ app.put('/api/v1/updateUrl',middleware,async(req : Request , res : Response) => 
         })
     }
 })
-
 app.put('/api/v1/updateProfile',middleware, async (req : Request, res : Response) => {
     const {voterId,firstName,lastName,idType,gender,address, selfieFile, documentFile} = req.body
     if(!voterId){
@@ -595,6 +594,27 @@ app.get('/api/v2/parties', async (req : Request, res : Response) => {
     }
         
 })
+app.get('/api/v2/getPartiesId', async (req : Request , res : Response) => {
+    try {
+        const parties = await partyModel.partyModel.find().select({
+            voterId : 1
+        })
+        if(!parties){
+            res.status(401).json({
+                message : "No parties found"
+            })
+            return;
+        }
+        const partyIds = parties.map(party => party.voterId);
+        res.status(200).json({
+            partyIds
+        })
+    } catch (error) {
+        res.status(500).json({
+            message : "Internal server error"
+        })
+    }
+})
 
 // contract routes
 
@@ -733,12 +753,6 @@ app.post('/api/v3/registerVoter',middleware, async (req : Request, res : Respons
         if(!voter){
             res.status(404).json({
                 message : "Voter not found"
-            })
-            return;
-        }
-        if(voter.verified){
-            res.status(404).json({
-                message : "Voter already registered"
             })
             return;
         }
@@ -934,7 +948,6 @@ app.get('/api/v3/partyStatus', async (req : Request, res : Response) => {
             return
         }
         const transaction = await getPartyStatus(partyIndex);
-        console.log("transaction",transaction)
         res.status(200).json({
             message : "Get status successfully",
             id : transaction.id,
@@ -951,7 +964,8 @@ app.get('/api/v3/partyStatus', async (req : Request, res : Response) => {
     }
 })
 app.get('/api/v3/voterStatus',middleware, async (req : Request , res : Response) => {
-    const voterId = req.query.voterId as string;
+    const voterId = req.body.voterId;
+    console.log("voterId",voterId)
     try {
         const voter = await voterModel.voterModel.findOne({voterId});
         if(!voter) {

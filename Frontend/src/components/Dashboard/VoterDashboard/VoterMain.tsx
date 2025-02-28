@@ -7,7 +7,7 @@ import {
   TrendingUp,
   CircleX
 } from 'lucide-react';
-
+import DynamicChart from './DynamicChart';
 export default function VoterMain({verified, firstName, lastName, setRender} : {verified : boolean, firstName : string, lastName : string , setRender : (render : string) => void}) {
   return (
     <div className="space-y-6">
@@ -92,22 +92,9 @@ export default function VoterMain({verified, firstName, lastName, setRender} : {
 
       {/* Recent Activity & Upcoming Elections */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-lg p-6 shadow-sm">
-          <h2 className="text-xl font-bold text-gray-800 mb-4">Recent Activity</h2>
-          <div className="space-y-4">
-            {[1, 2, 3].map((_, i) => (
-              <div key={i} className="flex items-start space-x-4 p-3 hover:bg-gray-50 rounded-lg">
-                <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
-                  <CheckCircle className="w-4 h-4 text-purple-700" />
-                </div>
-                <div>
-                  <p className="text-gray-800 font-medium">Local Council Election</p>
-                  <p className="text-sm text-gray-500">Voted on Feb {20 - i}, 2024</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+
+        
+        <DynamicChart/>
 
         <div className="bg-white rounded-lg p-6 shadow-sm">
           <h2 className="text-xl font-bold text-gray-800 mb-4">Upcoming Elections</h2>

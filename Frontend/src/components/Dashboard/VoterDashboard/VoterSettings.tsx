@@ -155,7 +155,7 @@ export default function VoterSettings() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-600 to-purple-800 text-white font-sans">
+    <div className="min-h-screen  text-white font-sans">
       {/* Grid pattern overlay */}
       <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiMyMTIxMjEiIGZpbGwtb3BhY2l0eT0iMC40Ij48cGF0aCBkPSJNMzYgMzRoLTJ2LTRoMnY0em0wLTZoLTJ2LTRoMnY0eiIvPjwvZz48L2c+PC9zdmc+')] opacity-5 z-0"></div>
       
@@ -163,10 +163,10 @@ export default function VoterSettings() {
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="text-center mb-12">
-            <h1 className="text-4xl md:text-5xl font-bold mb-3 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-blue-500">
+            <h1 className="text-4xl md:text-5xl font-bold mb-3 bg-clip-text text-black">
               User Settings
             </h1>
-            <p className="text-purple-200/70 max-w-2xl mx-auto">
+            <p className="text-black max-w-2xl mx-auto underline">
               Update your profile information and manage your account settings
             </p>
           </div>
@@ -178,7 +178,7 @@ export default function VoterSettings() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* First Name */}
                 <div className="space-y-2">
-                  <label htmlFor="firstName" className="block text-sm font-medium text-purple-300">
+                  <label htmlFor="firstName" className="block text-sm font-medium text-black">
                     First Name
                   </label>
                   <div className="relative">
@@ -186,18 +186,18 @@ export default function VoterSettings() {
                       type="text"
                       id="firstName"
                       name="firstName"
-                      value={formState.firstName}
+                     value={formState.firstName}
                       onChange={handleInputChange}
-                      className="w-full bg-gray-900/50 border border-purple-500/30 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent transition-all duration-200"
+                      className="w-full bg-gray-200 border border-b-blue-950 rounded-lg px-4 py-3 text-blue-950 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-950 focus:border-transparent transition-all duration-200"
                       placeholder="Enter your first name"
                     />
-                    <User className="absolute right-3 top-3 h-5 w-5 text-purple-400/50" />
+                    <User className="absolute right-3 top-3 h-5 w-5 text-blue-950" />
                   </div>
                 </div>
                 
                 {/* Last Name */}
                 <div className="space-y-2">
-                  <label htmlFor="lastName" className="block text-sm font-medium text-purple-300">
+                  <label htmlFor="lastName" className="block text-sm font-medium text-black">
                     Last Name
                   </label>
                   <div className="relative">
@@ -207,16 +207,16 @@ export default function VoterSettings() {
                       name="lastName"
                       value={formState.lastName}
                       onChange={handleInputChange}
-                      className="w-full bg-gray-900/50 border border-purple-500/30 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent transition-all duration-200"
+                      className="w-full bg-gray-200 border border-b-blue-950 rounded-lg px-4 py-3 text-blue-950 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-950 focus:border-transparent transition-all duration-200"
                       placeholder="Enter your last name"
                     />
-                    <User className="absolute right-3 top-3 h-5 w-5 text-purple-400/50" />
+                    <User className="absolute right-3 top-3 h-5 w-5 text-blue-950" />
                   </div>
                 </div>
                 
                 {/* Selfie Upload */}
                 <div className="space-y-2">
-                  <label htmlFor="selfie" className="block text-sm font-medium text-purple-300">
+                  <label htmlFor="selfie" className="block text-sm font-medium text-black">
                     Selfie Upload
                   </label>
                   
@@ -241,7 +241,7 @@ export default function VoterSettings() {
                     />
                     <label
                       htmlFor="selfie"
-                      className="flex items-center justify-center w-full bg-gray-900/50 border border-purple-500/30 border-dashed rounded-lg px-4 py-8 text-white cursor-pointer hover:bg-gray-800/50 hover:border-purple-500/50 transition-all duration-200 group-hover:shadow-[0_0_10px_rgba(168,85,247,0.2)]"
+                      className="flex items-center justify-center w-full bg-gray-900/50 border border-b-blue-950 border-dashed rounded-lg px-4 py-8 text-white cursor-pointer hover:bg-gray-800/50 hover:border-purple-500/50 transition-all duration-200 group-hover:shadow-[0_0_10px_rgba(168,85,247,0.2)]"
                     >
                       <div className="text-center">
                         <Camera className="mx-auto h-8 w-8 text-purple-400 mb-2" />
@@ -253,7 +253,7 @@ export default function VoterSettings() {
                 
                 {/* Document Upload */}
                 <div className="space-y-2">
-                  <label htmlFor="document" className="block text-sm font-medium text-purple-300">
+                  <label htmlFor="document" className="block text-sm font-medium text-black">
                     Document Upload
                   </label>
                   {formState.documentFile ? <div>
@@ -276,7 +276,7 @@ export default function VoterSettings() {
                     />
                     <label
                       htmlFor="document"
-                      className="flex items-center justify-center w-full bg-gray-900/50 border border-purple-500/30 border-dashed rounded-lg px-4 py-8 text-white cursor-pointer hover:bg-gray-800/50 hover:border-purple-500/50 transition-all duration-200 group-hover:shadow-[0_0_10px_rgba(168,85,247,0.2)]"
+                      className="flex items-center justify-center w-full bg-gray-900/50 border border-b-blue-950 border-dashed rounded-lg px-4 py-8 text-white cursor-pointer hover:bg-gray-800/50 hover:border-purple-500/50 transition-all duration-200 group-hover:shadow-[0_0_10px_rgba(168,85,247,0.2)]"
                     >
                       <div className="text-center">
                         <Upload className="mx-auto h-8 w-8 text-purple-400 mb-2" />
@@ -290,23 +290,23 @@ export default function VoterSettings() {
                 
                 {/* ID Type Dropdown */}
                 <div className="space-y-2">
-                  <label htmlFor="idType" className="block text-sm font-medium text-purple-300">
+                  <label htmlFor="idType" className="block text-sm font-medium text-black">
                     ID Type
                   </label>
                   <div className="relative">
                     <button
                       type="button"
                       onClick={() => toggleDropdown('idType')}
-                      className="flex items-center justify-between w-full bg-gray-900/50 border border-purple-500/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent transition-all duration-200"
+                      className="flex items-center justify-between w-full bg-gray-200 border border-b-blue-950 rounded-lg px-4 py-3 text-blue-950 focus:outline-none focus:ring-2 focus:ring-blue-950 focus:border-transparent transition-all duration-200"
                     >
-                      <span className={formState.idType ? "text-white" : "text-gray-500"}>
+                      <span className={formState.idType ? "text-blue-950" : "text-gray-500"}>
                         {formState.idType || "Select ID type"}
                       </span>
-                      <ChevronDown className={`h-5 w-5 text-purple-400 transition-transform duration-200 ${formState.showDropdown.idType ? 'rotate-180' : ''}`} />
+                      <ChevronDown className={`h-5 w-5 text-blue-950 transition-transform duration-200 ${formState.showDropdown.idType ? 'rotate-180' : ''}`} />
                     </button>
                     
                     {formState.showDropdown.idType && (
-                      <div className="absolute z-10 mt-1 w-full bg-gray-800 border border-purple-500/30 rounded-lg shadow-lg shadow-purple-500/10 py-1 animate-fadeIn">
+                      <div className="absolute z-10 mt-1 w-full bg-gray-800 border border-b-blue-950 rounded-lg shadow-lg shadow-purple-500/10 py-1 animate-fadeIn">
                         {idTypes.map((type) => (
                           <div
                             key={type}
@@ -327,23 +327,23 @@ export default function VoterSettings() {
                 
                 {/* Gender Dropdown */}
                 <div className="space-y-2">
-                  <label htmlFor="gender" className="block text-sm font-medium text-purple-300">
+                  <label htmlFor="gender" className="block text-sm font-medium text-black">
                     Gender
                   </label>
                   <div className="relative">
                     <button
                       type="button"
                       onClick={() => toggleDropdown('gender')}
-                      className="flex items-center justify-between w-full bg-gray-900/50 border border-purple-500/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent transition-all duration-200"
+                      className="flex items-center justify-between w-full bg-gray-200 border border-b-blue-950 rounded-lg px-4 py-3 text-blue-950 focus:outline-none focus:ring-2 focus:ring-blue-950 focus:border-transparent transition-all duration-200"
                     >
-                      <span className={formState.gender ? "text-white" : "text-gray-500"}>
+                      <span className={formState.gender ? "text-blue-950" : "text-gray-500"}>
                         {formState.gender || "Select gender"}
                       </span>
-                      <ChevronDown className={`h-5 w-5 text-purple-400 transition-transform duration-200 ${formState.showDropdown.gender ? 'rotate-180' : ''}`} />
+                      <ChevronDown className={`h-5 w-5 text-blue-950 transition-transform duration-200 ${formState.showDropdown.gender ? 'rotate-180' : ''}`} />
                     </button>
                     
                     {formState.showDropdown.gender && (
-                      <div className="absolute z-10 mt-1 w-full bg-gray-800 border border-purple-500/30 rounded-lg shadow-lg shadow-purple-500/10 py-1 animate-fadeIn">
+                      <div className="absolute z-10 mt-1 w-full bg-gray-800 border border-b-blue-950 rounded-lg shadow-lg shadow-purple-500/10 py-1 animate-fadeIn">
                         {genders.map((gender) => (
                           <div
                             key={gender}
@@ -364,7 +364,7 @@ export default function VoterSettings() {
               
               {/* Address - Full width */}
               <div className="mt-6 space-y-2">
-                <label htmlFor="address" className="block text-sm font-medium text-purple-300">
+                <label htmlFor="address" className="block text-sm font-medium text-black">
                   Address
                 </label>
                 <div className="relative">
@@ -374,10 +374,10 @@ export default function VoterSettings() {
                     value={formState.address}
                     onChange={handleInputChange}
                     rows={4}
-                    className="w-full bg-gray-900/50 border border-purple-500/30 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent transition-all duration-200 resize-none"
+                    className="w-full bg-gray-200 border border-b-blue-950 rounded-lg px-4 py-3 text-blue-950 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-950 focus:border-transparent transition-all duration-200 resize-none"
                     placeholder="Enter your full address"
                   ></textarea>
-                  <MapPin className="absolute right-3 top-3 h-5 w-5 text-purple-400/50" />
+                  <MapPin className="absolute right-3 top-3 h-5 w-5 text-blue-950" />
                 </div>
               </div>
               

@@ -7,6 +7,7 @@ import { useState } from 'react';
 import VoterVerification from '../ui/VoterVerification.tsx';
 import RegisteredParties from './RegisteredParties.tsx';
 import VoterSettings from './VoterSettings.tsx';
+import DynamicChart from './DynamicChart.tsx';
 function VoterDash() {
   const [ render , setRender] = useState<string>("VoterMain")
   const [firstName, setFirstName] = useState<string>("Unknown");
@@ -42,6 +43,8 @@ function VoterDash() {
         return <RegisteredParties />;
       case "Settings" :
         return <VoterSettings/>;
+      case "Voting Analytics":
+        return <DynamicChart/>;
       default:
         return <VoterMain verified={verified} firstName={firstName} lastName={lastName} setRender={setRender} />;
     }
