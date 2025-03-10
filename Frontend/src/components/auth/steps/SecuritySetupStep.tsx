@@ -65,12 +65,13 @@ export const SecuritySetupStep: React.FC<Props> = ({
       const voter = await axios.post("http://localhost:3000/api/v1/emailcheck", {
         email : data.email
       })
+      console.log("voter:",voter.data)
       if(voter.status !== 200){
         alert("This email is already registered");
         return;
       }
-
     } catch (error) {
+      console.log("error",error)
       alert("Server down. Please try again later.")
       return;
     }

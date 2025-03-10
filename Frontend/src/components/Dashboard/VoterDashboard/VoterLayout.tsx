@@ -31,7 +31,7 @@ export default function VoterLayout({ children, firstName, lastName, setRender }
     { icon: <UsersRound className="w-5 h-5" />, label: 'Registered Parties'},
     { icon: <Calendar className="w-5 h-5" />, label: 'Upcoming Elections'},
     { icon: <BarChart2 className="w-5 h-5" />, label: 'Voting Analytics'},
-    { icon: <TrendingUp className="w-5 h-5" />, label: 'Poll Results'},
+    { icon: <TrendingUp className="w-5 h-5" />, label: 'Vote now'},
     { icon: <Share2 className="w-5 h-5" />, label: 'Social Media'},
     { icon: <Settings className="w-5 h-5" />, label: 'Settings'},
   ];

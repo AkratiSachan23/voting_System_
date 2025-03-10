@@ -4,7 +4,7 @@ import { FileText, Upload } from 'lucide-react';
 import axios from 'axios';
 
 export interface IdentityInfo {
-    idType: 'aadhar' | 'voter';
+    idType: 'Aadhar Card' | 'Voter Id';
     documentNumber: string;
     symbolUrl: string;
     documentUrl: string;
@@ -21,6 +21,8 @@ export const PartyIdentityVerificationStep: React.FC<Props> = ({
   onPrevious,
   updateFormData
 }) => {
+  const [symbol,setSymbol] = useState<string>('');
+  const [document,setDocument] = useState<string>('');
   const [symbolPreview, setSymbolPreview] = useState<string>('');
   const [documentPreview, setDocumentPreview] = useState<string>('');
 
@@ -52,26 +54,30 @@ export const PartyIdentityVerificationStep: React.FC<Props> = ({
         const upload = await axios.post('http://localhost:3000/api/v1/upload', formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
-        console.log(upload)
+        console.log("upload",upload)
         if(upload.status !== 200){
             alert("Error in file uploading. Please try again!")
+            URL.revokeObjectURL(localPreview);
+            if (type === "symbol") setSymbolPreview('');
+            else setDocumentPreview('');
             return;
         }
-        const fileUrl = upload.data.fileUrl
-        if(type === "symbol"){
-          setSymbolPreview(fileUrl);
-        }else{
-          setDocumentPreview(fileUrl);
+        if(type === 'symbol'){
+          setSymbol(upload.data.fileUrl);
+        } else {
+          setDocument(upload.data.fileUrl);
         }
       } catch (error) {
         alert("error to connect database")
+      } finally {
+        URL.revokeObjectURL(localPreview);
       }
     
     }
   };
 
   const onSubmit = (data: IdentityInfo) => {
-    updateFormData({ ...data, symbolUrl: symbolPreview, documentUrl: documentPreview });
+    updateFormData({ ...data, symbolUrl: symbol, documentUrl: document });
     onNext();
   };
 
@@ -86,8 +92,8 @@ export const PartyIdentityVerificationStep: React.FC<Props> = ({
           className="w-full py-2 px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition duration-300"
         >
           <option value="">Select ID type</option>
-          <option value="aadhar">Aadhar Card</option>
-          <option value="voter">Voter ID</option>
+          <option value="Aadhar Card">Aadhar Card</option>
+          <option value="Voter Id">Voter ID</option>
         </select>
         {errors.idType && (
           <p className="mt-1 text-sm text-red-600">{errors.idType.message}</p>

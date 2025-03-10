@@ -62,7 +62,7 @@ export const PartySecuritySetupStep: React.FC<Props> = ({
       return;
     }
     try {
-      const voter = await axios.post("http://localhost:3000/api/v1/emailcheck", {
+      const voter = await axios.post("http://localhost:3000/api/v2/emailcheck", {
         email : data.email
       })
       if(voter.status !== 200){

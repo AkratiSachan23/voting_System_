@@ -1,15 +1,21 @@
 import React from 'react';
+import axios from 'axios'
 import { motion } from 'framer-motion';
 import type { PersonalInfo } from './PartyInfoStep';
 import type { IdentityInfo } from './PartyIdentityVerificationStep';
 import type { SecurityInfo } from './PartySecuritySetupStep';
+import type {DetailInfo} from './PartyDetailsStep'
+import Cookies from 'js-cookie';
+import { useNavigate } from 'react-router-dom';
+
 interface Props {
-  formData: PersonalInfo & IdentityInfo & SecurityInfo;
+  formData: PersonalInfo & IdentityInfo & SecurityInfo & DetailInfo;
   onPrevious: () => void;
   updateFormData: (data: any) => void;
 }
 
 export const PartyReviewStep: React.FC<Props> = ({ formData, onPrevious }) => {
+   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [termsAccepted, setTermsAccepted] = React.useState(false);
   const [privacyAccepted, setPrivacyAccepted] = React.useState(false);
@@ -24,12 +30,56 @@ export const PartyReviewStep: React.FC<Props> = ({ formData, onPrevious }) => {
     setIsSubmitting(true);
     try {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      console.log('Form submitted:', formData);
+      console.log("partyName",formData.partyName)
+        console.log("partyAbbreviation" , formData.partyAbbreviation)
+        console.log("dateOfBirth" , formData.dateOfBirth)
+        console.log("address" , formData.address)
+        console.log("gender" , formData.gender)
+        console.log("idType" , formData.idType)
+        console.log("documentNumber" , formData.documentNumber)
+        console.log("symbolUrl" , formData.symbolUrl)
+        console.log("documentUrl" , formData.documentUrl)
+        console.log("mobile" , formData.mobile)
+        console.log("username" , formData.username)
+        console.log("password" , formData.password)
+        console.log("email" , formData.email)
+        console.log("partyLeaderName" , formData.partyLeaderName)
+        console.log("manifesto" , formData.manifesto)
+        console.log("partyConstitution" , formData.partyConstitution);
+
+        
+      const response = await axios.post('http://localhost:3000/api/v2/signup',{
+        partyName : formData.partyName,
+        partyAbbreviation : formData.partyAbbreviation,
+        dateOfBirth : formData.dateOfBirth,
+        address : formData.address,
+        gender : formData.gender,
+        idType : formData.idType,
+        documentNumber : formData.documentNumber,
+        symbolUrl : formData.symbolUrl,
+        documentUrl : formData.documentUrl,
+        mobile : formData.mobile,
+        username : formData.username,
+        password : formData.password,
+        email : formData.email,
+        partyLeaderName : formData.partyLeaderName,
+        manifesto : formData.manifesto,
+        partyConstitution : formData.partyConstitution
+      });
+      console.log(response);
+      if(response.status !== 200){
+        console.log(response.data.message)
+        alert(response.data.message);
+        return;
+      }
+      const token = response.data.token;
+      Cookies.set('token',token, { expires: 2});
       alert('Registration successful!');
-    } catch (error) {
-      console.error('Error submitting form:', error);
+      navigate(`/party/dashboard/${token}`);
+    } catch (error : any) {
+      console.log(error );
       alert('An error occurred during registration. Please try again.');
+      alert(error.response.data.message)
     } finally {
       setIsSubmitting(false);
     }

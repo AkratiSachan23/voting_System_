@@ -13,12 +13,13 @@ import { middleware } from './middleware.js';
 import cookieParser from 'cookie-parser'
 import { addParty, blockVoter, distributeTokens, endElection, getPartyStatus, getTotalParties, getTotalVoters, getTotalVotes, getVoterAddresses, getVoterStatus, mintTokens, registerVoter, removeParty, resetElection, results, startElection, unblockVoter, vote } from './contract.js';
 import { PythonShell } from "python-shell";
+import { trusted } from 'mongoose';
 const app = express();
 const PORT = 3000;
 export const storage = new Storage({keyFilename : 'src/skilled-circle-448817-d1-e3457c9445ad.json'});
 export const bucket = storage.bucket('votingbuck')
 const upload = multer({ storage: multer.memoryStorage() });
-app.use(cors({credentials: true, origin: 'http://localhost:5173'}));
+app.use(cors({credentials: true, origin: 'http://localhost:5174'}));
 app.use(express.json());
 app.use(cookieParser());
 const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY;
@@ -429,7 +430,85 @@ app.put('/api/v1/updateProfile',middleware, async (req : Request, res : Response
     }
 
 })
+app.get('/api/v1/getVoters', async (req : Request , res : Response) => {
+    try {
+        const voters = await voterModel.voterModel.find().select({
+            firstName : 1,
+            lastName : 1,
+            voterId : 1,
+            verified : 1,
+            isBlocked : 1,
+        })
+        if(!voters){
+            res.status(401).json({
+                message : "No voters found"
+            })
+            return;
+        }
+        res.status(200).json({
+            voters
+        })
 
+    } catch (error) {
+        res.status(500).json({
+            message : "Internal server error"
+        })
+    }
+})
+app.get('/api/v1/getBlockedVoters', async(req : Request, res : Response) => {
+    try {
+        const blockedVoters = await voterModel.voterModel.find({
+            isBlocked : true
+        });
+        if(!blockedVoters){
+            res.status(401).json({
+                message : "No blocked voters found",
+                blockedVoters : 0
+            })
+            return;
+        }
+        res.status(200).json({
+            blockedVoters
+        })
+    } catch (error) {
+        res.status(500).json({
+            message : "Internal server error",
+            blockVoters : 0
+        })
+    }
+})
+app.post('/api/v1/toggleBlock', async (req: Request, res: Response) => {
+    const { voterId } = req.body;
+
+    try {
+        const voter = await voterModel.voterModel.findOne({ voterId });
+
+        if (!voter) {
+            res.status(404).json({ message: "No user found" });
+            return;
+        }
+
+        const updatedVoter = await voterModel.voterModel.findOneAndUpdate(
+            { voterId },
+            { $set: { isBlocked: !voter.isBlocked } },
+            { new: true }
+        );
+        if(!updatedVoter){
+            res.status(401).json({
+                message : "No voter found"
+            })
+            return;
+        }
+        res.status(200).json({
+            message: `User ${updatedVoter.isBlocked ? "blocked" : "unblocked"} successfully`,
+            isBlocked: updatedVoter.isBlocked
+        });
+
+    } catch (error) {
+        console.error("Error toggling block status:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
 // party routes
 
 app.post('/api/v2/signup', async (req : Request , res : Response) => {
@@ -497,15 +576,15 @@ app.post('/api/v2/signup', async (req : Request , res : Response) => {
             documentNumber : Number(documentNumber),
             symbolUrl,
             documentUrl,
-            mobile,
+            mobile : Number(mobile),
             username,
             password: bcryptPassword,
             email,
             partyLeaderName,
             voterId : voterId,
             manifesto,
-            partyConstitution
-
+            partyConstitution,
+            partyId : Math.random() * 1000000000
         })
         const token = jwt.sign(voterId,JWT_SECRET_KEY);
         res.status(200).json({
@@ -575,7 +654,10 @@ app.get('/api/v2/parties', async (req : Request, res : Response) => {
             partyLeaderName: 1,
             symbolUrl : 1,
             manifesto : 1,
-            partyConstitution : 1
+            partyConstitution : 1,
+            voterId : 1,
+            verified : 1,
+            isBlocked : 1
         });
         if(!parties){
             res.status(401).json({
@@ -608,6 +690,74 @@ app.get('/api/v2/getPartiesId', async (req : Request , res : Response) => {
         const partyIds = parties.map(party => party.voterId);
         res.status(200).json({
             partyIds
+        })
+    } catch (error) {
+        res.status(500).json({
+            message : "Internal server error"
+        })
+    }
+})
+app.post('/api/v2/emailcheck', async (req : Request, res : Response) => {
+    const email = req.body.email;
+    const user = await partyModel.partyModel.findOne({email});
+    if(!user){
+        res.status(200).json({
+            email : null
+        })
+        return;
+    }
+    res.status(300).json({
+        email : user.email
+    })
+})
+app.post('/api/v2/toggleBlock', async (req : Request, res : Response) => {
+    const { voterId } = req.body;
+
+    try {
+        const party = await partyModel.partyModel.findOne({ voterId });
+
+        if (!party) {
+            res.status(404).json({ message: "No party found" });
+            return;
+        }
+
+        const updatedParty = await partyModel.partyModel.findOneAndUpdate(
+            { voterId },
+            { $set: { isBlocked: !party.isBlocked } },
+            { new: true }
+        );
+        if(!updatedParty){
+            res.status(401).json({
+                message : "No party found"
+            })
+            return;
+        }
+        res.status(200).json({
+            message: `User ${updatedParty.isBlocked ? "blocked" : "unblocked"} successfully`,
+            isBlocked: updatedParty.isBlocked
+        });
+
+    } catch (error) {
+        console.error("Error toggling block status:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+})
+app.get('/api/v2/getPartiesData', async (req : Request, res : Response) => {
+    try {
+        const parties = await partyModel.partyModel.find().select({
+            voterId : 1,
+            partyId : 1,
+            partyName : 1,
+        })
+        if(!parties){
+            res.status(401).json({
+                message : "No parties found"
+            })
+            return;
+        }
+        res.status(200).json({
+            parties
+
         })
     } catch (error) {
         res.status(500).json({
@@ -966,6 +1116,39 @@ app.get('/api/v3/partyStatus', async (req : Request, res : Response) => {
 app.get('/api/v3/voterStatus',middleware, async (req : Request , res : Response) => {
     const voterId = req.body.voterId;
     console.log("voterId",voterId)
+    try {
+        const voter = await voterModel.voterModel.findOne({voterId});
+        if(!voter) {
+            res.status(404).json({
+                message : "Voter not found"
+            })
+            return;
+        }
+        const voterIndex = voter.voterIndex
+        if(!voterIndex){
+            res.status(404).json({
+                message : "Voter index not found"
+            })
+            return;
+        }
+        const transaction = await getVoterStatus(voterIndex);
+        res.status(200).json({
+            message : "Voter status fetched successfully",
+            isRegistered : transaction.isRegistered,
+            isBlocked : transaction.isBlocked,
+            hasVoted : transaction.hasVoted,
+            allocatedTokens : transaction.allocatedTokens
+        });
+    } catch (error) {
+        res.status(500).json({
+            message : "Voter status not fetched successfully",
+            error : error
+        })
+        return;
+    }
+})
+app.get('api/v3/getVoterStatus', async (req : Request , res : Response) => {
+    const voterId = req.query.voterId;
     try {
         const voter = await voterModel.voterModel.findOne({voterId});
         if(!voter) {

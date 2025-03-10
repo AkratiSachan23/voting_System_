@@ -45,7 +45,8 @@ const VoterSchema = new mongoose.Schema({
     email: { type: String, unique: true, required: true },
     voterId : {type: String , required : true},
     verified : {type : Boolean , default : false},
-    voterIndex : {type : Number, unique: true}
+    voterIndex : {type : Number, unique: true},
+    isBlocked : {type : Boolean , default : false}
 });
 VoterSchema.pre('save', async function (next) {
     if (!this.voterIndex) {
@@ -82,7 +83,9 @@ const PartySchema = new mongoose.Schema({
     manifesto: { type: String, required: true },
     partyConstitution: { type: String, required: true },
     partyIndex : {type : Number, unique : true},
-    partyId : {type : Number, unique : true}
+    partyId : { type: Number, unique: true, sparse: true },
+    verified : {type : Boolean , default : false},
+    isBlocked : {type : Boolean , default : false}
 })
 PartySchema.pre('save', async function (next) {
     if (!this.partyIndex) {

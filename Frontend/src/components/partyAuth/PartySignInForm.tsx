@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Lock, User, Mail } from 'lucide-react';
+import axios from 'axios';
+import Cookies from 'js-cookie';
+import { useNavigate } from 'react-router-dom';
 
 export interface UserCredentials {
     username: string;
@@ -11,7 +14,7 @@ export interface UserCredentials {
 export const PartySignInForm = ({setIsRegistering} : {setIsRegistering : (state : boolean) => void}) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  
+  const navigate = useNavigate();
   const {
     register,
     handleSubmit,
@@ -22,8 +25,27 @@ export const PartySignInForm = ({setIsRegistering} : {setIsRegistering : (state 
     setIsLoading(true);
     try {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      console.log('Sign in:', data);
+      const response = await axios.post('http://localhost:3000/api/v2/signin',{
+        username : data.username,
+        password : data.password
+      });
+      if(!response){
+        alert("Invalid Credentials")
+        return;
+      }
+      if(response.status === 401){
+        alert(response.data.message)
+        return;
+      }
+      if(response.status === 200){
+        const token = response.data.token;
+      Cookies.set('token',token, {expires : 2});
+      navigate(`/party/dashboard/${token}`)
+      alert(response.data.message);
+      }
+    }catch(error){
+      console.log(error)
+      alert(error)
     } finally {
       setIsLoading(false);
     }

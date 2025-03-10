@@ -19,6 +19,8 @@ export const PartyDetailsStep: React.FC<Props> = ({
   onPrevious,
   updateFormData
 }) => {
+  const [manifesto, setManifesto] = useState<string>('');
+  const [partyConstitution, setPartyConstitution] = useState<string>('');
   const [manifestoPreview, setManifestoPreview] = useState<string>('');
   const [partyConstitutonPreview, setPartyConstitutonPreview] = useState<string>('');
 
@@ -34,11 +36,12 @@ export const PartyDetailsStep: React.FC<Props> = ({
   ) => {
     const file = event.target.files?.[0];
     if (file) {
-      if (file.size > 10 * 1024 * 1024) {
+      if (file.size > 30 * 1024 * 1024) {
         alert('File size should not exceed 10MB');
         return;
       }
       const localPreview = URL.createObjectURL(file);
+      console.log("LOCAL PREVIEW",localPreview)
       if (type === "manifesto") {
         setManifestoPreview(localPreview);
       } else {
@@ -53,22 +56,28 @@ export const PartyDetailsStep: React.FC<Props> = ({
         console.log(upload)
         if(upload.status !== 200){
             alert("Error in file uploading. Please try again!")
+            URL.revokeObjectURL(localPreview);
+            if (type === "manifesto") setManifestoPreview('');
+            else setPartyConstitutonPreview('');
             return;
         }
-        const fileUrl = upload.data.fileUrl
-        if(type === "manifesto"){
-          setManifestoPreview(fileUrl);
+        if(type === 'manifesto'){
+          setManifesto(upload.data.fileUrl);
         }else{
-          setPartyConstitutonPreview(fileUrl);
+          setPartyConstitution(upload.data.fileUrl);
         }
       } catch (error) {
         alert("error to connect database")
+      }finally {
+        URL.revokeObjectURL(localPreview);
       }
     }
   };
 
   const onSubmit = (data: DetailInfo) => {
-    updateFormData({ ...data, manifesto: manifestoPreview, partyConstitution: partyConstitutonPreview });
+    console.log("manifesto", manifesto)
+    console.log("partyConstitution", partyConstitution)
+    updateFormData({ ...data, manifesto: manifesto, partyConstitution: partyConstitution });
     onNext();
   };
 
@@ -103,7 +112,7 @@ export const PartyDetailsStep: React.FC<Props> = ({
             {manifestoPreview ? (
               <img
                 src={manifestoPreview}
-                alt="Selfie preview"
+                alt="manifesto preview"
                 className="mx-auto h-32 w-32 object-cover rounded-lg"
               />
             ) : (
@@ -121,21 +130,21 @@ export const PartyDetailsStep: React.FC<Props> = ({
               </label>
               <p className="pl-1">or drag and drop</p>
             </div>
-            <p className="text-xs text-gray-500">pdf up to 10MB</p>
+            <p className="text-xs text-gray-500">pdf up to 30MB</p>
           </div>
         </div>
       </div>
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          ID Document Upload
+          Party Constitution Upload
         </label>
         <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg">
           <div className="space-y-1 text-center">
             {partyConstitutonPreview ? (
               <img
                 src={partyConstitutonPreview}
-                alt="Document preview"
+                alt="constitution preview"
                 className="mx-auto h-32 w-32 object-cover rounded-lg"
               />
             ) : (
@@ -153,7 +162,7 @@ export const PartyDetailsStep: React.FC<Props> = ({
               </label>
               <p className="pl-1">or drag and drop</p>
             </div>
-            <p className="text-xs text-gray-500">pdf up to 10MB</p>
+            <p className="text-xs text-gray-500">pdf up to 30MB</p>
           </div>
         </div>
       </div>
