@@ -41,7 +41,6 @@ export const PartyDetailsStep: React.FC<Props> = ({
         return;
       }
       const localPreview = URL.createObjectURL(file);
-      console.log("LOCAL PREVIEW",localPreview)
       if (type === "manifesto") {
         setManifestoPreview(localPreview);
       } else {

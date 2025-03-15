@@ -1,7 +1,8 @@
 import express, { Request, Response} from 'express'
-import { VoterSignInSchema, VoterSignupSchema, PartySignupSchema , PartySigninSchema } from './schema.js';
+import { VoterSignInSchema, VoterSignupSchema, PartySignupSchema , PartySigninSchema, PartyTeamSchema } from './schema.js';
 import voterModel from './db.js'
 import partyModel from './db.js'
+import partyTeamModel from './db.js'
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
 import multer from 'multer'
@@ -13,13 +14,12 @@ import { middleware } from './middleware.js';
 import cookieParser from 'cookie-parser'
 import { addParty, blockVoter, distributeTokens, endElection, getPartyStatus, getTotalParties, getTotalVoters, getTotalVotes, getVoterAddresses, getVoterStatus, mintTokens, registerVoter, removeParty, resetElection, results, startElection, unblockVoter, vote } from './contract.js';
 import { PythonShell } from "python-shell";
-import { trusted } from 'mongoose';
 const app = express();
 const PORT = 3000;
 export const storage = new Storage({keyFilename : 'src/skilled-circle-448817-d1-e3457c9445ad.json'});
 export const bucket = storage.bucket('votingbuck')
 const upload = multer({ storage: multer.memoryStorage() });
-app.use(cors({credentials: true, origin: 'http://localhost:5174'}));
+app.use(cors({credentials: true, origin: 'http://localhost:5173'}));
 app.use(express.json());
 app.use(cookieParser());
 const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY;
@@ -765,6 +765,249 @@ app.get('/api/v2/getPartiesData', async (req : Request, res : Response) => {
         })
     }
 })
+app.post('/api/v2/addTeamMember',middleware, async (req : Request, res : Response) => {
+    const {name , role, avatar, voterId} = req.body;
+    const parsedData = PartyTeamSchema.safeParse({
+        name,
+        role,
+        avatar,
+        voterId
+    });
+    if(!parsedData.success){
+        res.status(401).json({message : "Invalid data", errors: parsedData.error.format()});
+        return;
+    }
+    try {
+        const party = await partyModel.partyModel.findOne({
+            voterId
+        });
+        if(!party){
+            res.status(404).json({
+                message : "Party not found"
+            })
+            return;
+        }
+        const partyTeam = await partyTeamModel.partyteamModel.create({
+            name,
+            role,
+            avatar,
+            party : party._id
+        })
+        res.status(200).json({
+            message : "Team member added successfully",
+            partyTeam
+        })
+
+    } catch (error : any) {
+        res.status(500).json({
+            message : "Team member not added",
+            error : error.message
+        })
+    }
+})
+app.get('/api/v2/getTeamMembers',middleware, async (req : Request, res : Response) => {
+    const voterId = req.body.voterId;
+    if(voterId === undefined){
+        res.status(401).json({
+            message : "Party not logged in"
+        });
+        return;
+    }
+    try {
+        const party = await partyModel.partyModel.findOne({
+            voterId
+        })
+        if(!party){
+            res.status(404).json({
+                message : "Party not found"
+            })
+            return;
+        }
+        const teamMembers = await partyTeamModel.partyteamModel.find({
+            party : party._id
+        })
+        res.status(200).json({
+            teamMembers
+        })
+    } catch (error) {
+        res.status(500).json({
+            message : "Team members not found",
+            error : error
+        })
+    }
+})
+app.get('/api/v2/partyDetails', middleware, async (req : Request, res : Response) => {
+    const voterId = req.body.voterId;
+    if(voterId === undefined){
+        res.status(401).json({
+            message : "Party not logged in"
+        });
+        return;
+        }
+    try {
+        const party = await partyModel.partyModel.findOne({
+            voterId
+        }).select({
+            partyName : 1,
+            partyAbbreviation : 1,
+            address : 1,
+            symbolUrl : 1,
+            username : 1,
+            partyLeaderName : 1,
+            manifesto: 1,
+            partyConstitution : 1,
+            gender : 1,
+            mobile : 1,
+            email : 1,
+            verified : 1
+        })
+        if(party){
+            res.status(200).json({
+                partyDetails : party
+            });
+            return;
+        }
+    } catch (error) {
+        res.status(500).json({
+            message : "Party not found",
+            error : error
+        })
+    }
+})
+app.put('/api/v2/updateProfile', middleware, async(req : Request, res : Response) => {
+    const {voterId,name,abbreviation,address,symbol,username,leaderName,manifesto,constitution} = req.body ;
+    if(!voterId){
+        res.status(400).json({
+            message : "Party is not logged in"
+        })
+        return;
+    }
+    try {
+        const update = await partyModel.partyModel.findOneAndUpdate({
+            voterId
+        }, {
+            $set: {
+                partyName : name,
+                partyAbbreviation : abbreviation,
+                address : address,
+                symbolUrl : symbol,
+                username : username,
+                partyLeaderName : leaderName,
+                manifesto : manifesto,
+                partyConstitution : constitution
+            }
+        },{
+            new : true
+        })
+        if(!update){
+            res.status(401).json({
+                message : "No party found"
+            });
+            return;
+        }
+        res.status(200).json({
+            message : "Profile updated successfully",
+            UpdatedProfile : update
+        })
+    } catch (error) {
+        res.status(500).json({
+            message : "Internal server error",
+            error : error
+        })
+    }
+   
+})
+app.post('/api/v2/verifyParty', async (req: Request, res: Response) => {
+    const voterId = req.body.voterId;
+
+    if (!voterId) {
+        res.status(401).json({ message: "Party is not logged in" });
+        return;
+    }
+
+    const session = await partyModel.partyModel.startSession();
+    session.startTransaction(); 
+
+    try {
+        const party = await partyModel.partyModel.findOne({ voterId }).session(session);
+        if (!party) {
+            await session.abortTransaction();
+            session.endSession();
+            res.status(401).json({ message: "No party found" });
+            return;
+        }
+
+        const file = party.documentUrl;
+        const signedFile = await getPublicGoogleUrl(file);
+        const extractedText = await extractTextFromImage(signedFile);
+
+        if (!extractedText) {
+            await session.abortTransaction();
+            session.endSession();
+            res.status(400).json({ message: "Failed to extract text" });
+            return;
+        }
+
+        const fullName = party.partyLeaderName.toLowerCase().trim();
+        const gender = party.gender.toLowerCase().trim();
+        const document = party.documentNumber.toString().trim();
+
+        let documentNumbers = [];
+        for (let i = 0; i < document.length; i += 4) {
+            documentNumbers.push(document.slice(i, i + 4));
+        }
+
+        const extractedTextLower = extractedText.toLowerCase();
+
+        if (!extractedTextLower.includes(fullName)) {
+            await session.abortTransaction();
+            session.endSession();
+            res.status(401).json({ message: "Party leader name is not verified", verified: false });
+            return;
+        }
+
+        if (!extractedTextLower.includes(gender)) {
+            await session.abortTransaction();
+            session.endSession();
+            res.status(401).json({ message: "Voter gender is not verified", verified: false });
+            return;
+        }
+
+        if (!extractedTextLower.includes(documentNumbers[0])
+            || !extractedTextLower.includes(documentNumbers[1])
+            || !extractedTextLower.includes(documentNumbers[2])) {
+            await session.abortTransaction();
+            session.endSession();
+            res.status(401).json({ message: "Voter document number is not verified", verified: false });
+            return;
+        }
+
+        await partyModel.partyModel.updateOne({ voterId }, { $set: { verified: true } }).session(session);
+
+        const updateChain = await addParty(party.partyIndex as number, party.partyName);
+
+        if (!updateChain) {
+            await partyModel.partyModel.updateOne({ voterId }, { $set: { verified: false } }).session(session);
+            await session.abortTransaction();
+            session.endSession();
+            res.status(500).json({ message: "Blockchain update failed, verification reverted" });
+            return;
+        }
+        await session.commitTransaction();
+        session.endSession();
+
+        res.status(200).json({
+            message: "Party is verified",
+            verified: true,
+            transactionHash: updateChain
+        });
+
+    } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        res.status(500).json({ message: "Internal server error", error : error});
+    }
+});
 
 // contract routes
 
@@ -1047,7 +1290,7 @@ app.post('/api/v3/vote',middleware, async(req : Request, res : Response) => {
             })
             return;
         };
-        const party = await partyModel.partyModel.findOne({voterId : partyId});
+        const party = await partyModel.partyModel.findOne({partyIndex : partyId});
         if(!party){
             res.status(404).json({
                 message : "Party not found"

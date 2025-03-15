@@ -94,10 +94,9 @@ export default function Votenow () {
                 }
                 alert("vote cast successfully");
                 window.location.reload();
-            } catch (error) {
-                console.log(error);
-                alert("something went wrong");
-                window.location.reload();
+            } catch (error: any) {
+              console.log(error);
+                alert(`${error.response.data.message}. ${error.response.data.error.reason}`);
             }
         
       };

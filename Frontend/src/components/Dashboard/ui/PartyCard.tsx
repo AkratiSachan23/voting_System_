@@ -1,24 +1,36 @@
+import { useEffect, useState } from 'react';
 import {PartyListProps} from './PartyList'
 import { MicVocal, MapPin, PersonStanding  } from "lucide-react"
+import axios from 'axios';
 type partyCardProbs = {
     party : PartyListProps;
     onClick : () => void;
 }
-// _id: number
-//     partyName: string
-//     partyAbbreviation: string
-//     address: string
-//     partyLeaderName: string
-//     symbolUrl: string
 export default function PartyCard ({party, onClick} : partyCardProbs) {
-
+    const [publicUrl , setPublicUrl] = useState<string>("");
+    useEffect(() => {
+            const fetchPublicUrl = async () => {
+                try {
+                    const response = await axios.post("http://localhost:3000/api/v1/getPublicUrl",{
+                        file : party.symbolUrl
+                    })
+                    if(response.status === 200){
+                        setPublicUrl(response.data.url);
+                    }else{
+                        setPublicUrl(party.symbolUrl);
+                    }
+                } catch (error) {
+                    alert("Backend is down!");
+                    setPublicUrl(party.symbolUrl);
+                }
+            }
+            fetchPublicUrl();
+    },[party.symbolUrl])
     return (
         <div className= "bg-purple-800 rounded-lg overflow-hidden shadow-lg transform transition-all duration-300 hover:scale-105 hover:shadow-2xl cursor-pointer p-4" onClick={onClick}>
-            <img src={party.symbolUrl || "/placeholder.svg"}
+            <img src={publicUrl ||"/placeholder.svg"}
                         alt={party.partyAbbreviation}
-                        width={400}
-                        height={300}
-                        className="w-full h-48 object-cover" />
+                        className="w-full  h-48 object-fill" />
             <div className='p-6'>
                 <h2 className='text-2xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600'>
                     {party.partyName};

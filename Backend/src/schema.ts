@@ -44,3 +44,10 @@ export const PartySigninSchema = z.object({
     username : z.string().min(3,"Party name must be at least 3 characters").max(30,"Party name must not exceed 30 characters"),
     password: z.string().min(8, "Password must be at least 8 characters").max(20, "Password must not exceed 20 characters")
 })
+
+export const PartyTeamSchema = z.object({
+    name : z.string().min(3,"Name must be at least 3 characters"),
+    role : z.string().min(3, "role must be at least 3 characters"),
+    avatar : z.string().url("Invalid avatar URL"),
+    voterId : z.string().min(1, "Voter ID is required")
+})

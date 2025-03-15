@@ -85,7 +85,8 @@ const PartySchema = new mongoose.Schema({
     partyIndex : {type : Number, unique : true},
     partyId : { type: Number, unique: true, sparse: true },
     verified : {type : Boolean , default : false},
-    isBlocked : {type : Boolean , default : false}
+    isBlocked : {type : Boolean , default : false},
+    teamMembers : [{type : mongoose.Schema.Types.ObjectId, ref : "Partyteam"}]
 })
 PartySchema.pre('save', async function (next) {
     if (!this.partyIndex) {
@@ -104,10 +105,20 @@ PartySchema.pre('save', async function (next) {
     next();
 });
 
+const PartyteamSchema = new mongoose.Schema({
+    name : {type : String, required : true},
+    role : {type : String, required : true},
+    avatar : {type : String, required : true},
+    party : {type : mongoose.Schema.Types.ObjectId, ref : "Party", required : true}
+})
+
 const voterModel = mongoose.model("Voter",VoterSchema);
-const partyModel = mongoose.model("Party",PartySchema)
+const partyModel = mongoose.model("Party",PartySchema);
+const partyteamModel = mongoose.model("Partyteam",PartyteamSchema);
+
 
 export default {
     voterModel,
-    partyModel
+    partyModel,
+    partyteamModel
 }

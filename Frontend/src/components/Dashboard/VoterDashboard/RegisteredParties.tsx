@@ -7,7 +7,6 @@ export default function RegisteredParties () {
       const getParties = async () =>{
           try {
             const parties = await axios.get('http://localhost:3000/api/v2/parties');
-            console.log(parties.data.parties);
             setPartyList(parties.data.parties);
           } catch (error) {
             setPartyList([]);

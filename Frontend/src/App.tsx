@@ -6,6 +6,10 @@ import AuthPage from './components/auth/AuthPage'
 import PartyAuthPage from './components/partyAuth/PartyAuthPage';
 import VoterDash from './components/Dashboard/VoterDashboard/VoterDash';
 import AdminDash from './components/Dashboard/AdminDashboard/AdminDash';
+import PartyDash from './components/Dashboard/PartyDashboard/PartyDash';
+import Settings from './components/Dashboard/PartyDashboard/Settings';
+import View from './components/Dashboard/PartyDashboard/View';
+import Verification from './components/Dashboard/PartyDashboard/Verification';
 // import RegisteredParties from './components/Dashboard/VoterDashboard/RegisteredParties';
 // import VoterSettings from './components/Dashboard/VoterDashboard/VoterSettings'
 function App() {
@@ -20,6 +24,10 @@ function App() {
         {/* <Route path="/voter/dashboard/registeredParties" element= {<RegisteredParties />} />
         <Route path="/voter/dashboard/voterSettings" element= {<VoterSettings />} /> */}
         <Route path="/admin/dashboard" element= {<AdminDash />} />
+        <Route path="/party/dashboard/:token" element= {<PartyDash />} />
+        <Route path="/party/dashboard/:token/settings" element= {<Settings />} />
+        <Route path="/party/dashboard/:token/updateProfile" element= {<View />} />
+        <Route path="/party/dashboard/:token/verify" element= {<Verification />} />
         
       </Routes>
     </Router>

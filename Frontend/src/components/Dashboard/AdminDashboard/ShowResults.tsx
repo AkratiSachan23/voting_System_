@@ -1,13 +1,6 @@
 import { useEffect, useState} from 'react';
 import { LineChart, Vote } from 'lucide-react';
 import axios from 'axios';
-
-const votingData = [
-  { id: "P001", name: "Quantum Alliance", votes: 1234567, color: "purple" },
-  { id: "P002", name: "Digital Frontier", votes: 987654, color: "blue" },
-  { id: "P003", name: "Cyber Unity", votes: 876543, color: "pink" },
-  { id: "P004", name: "Tech Progressive", votes: 765432, color: "green" }
-];
 type DATA = {
     voterId : string;
     partyId : string;
