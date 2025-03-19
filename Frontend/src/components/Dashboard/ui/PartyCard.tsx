@@ -27,7 +27,7 @@ export default function PartyCard ({party, onClick} : partyCardProbs) {
             fetchPublicUrl();
     },[party.symbolUrl])
     return (
-        <div className= "bg-purple-800 rounded-lg overflow-hidden shadow-lg transform transition-all duration-300 hover:scale-105 hover:shadow-2xl cursor-pointer p-4" onClick={onClick}>
+        <div className= "bg-white text-black rounded-lg overflow-hidden shadow-lg transform transition-all duration-300 hover:scale-105 hover:shadow-2xl cursor-pointer p-4" onClick={onClick}>
             <img src={publicUrl ||"/placeholder.svg"}
                         alt={party.partyAbbreviation}
                         className="w-full  h-48 object-fill" />

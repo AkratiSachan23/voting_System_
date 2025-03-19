@@ -1,5 +1,6 @@
 import express, { Request, Response} from 'express'
 import { VoterSignInSchema, VoterSignupSchema, PartySignupSchema , PartySigninSchema, PartyTeamSchema } from './schema.js';
+import mongoose from 'mongoose';
 import voterModel from './db.js'
 import partyModel from './db.js'
 import partyTeamModel from './db.js'
@@ -14,13 +15,18 @@ import { middleware } from './middleware.js';
 import cookieParser from 'cookie-parser'
 import { addParty, blockVoter, distributeTokens, endElection, getPartyStatus, getTotalParties, getTotalVoters, getTotalVotes, getVoterAddresses, getVoterStatus, mintTokens, registerVoter, removeParty, resetElection, results, startElection, unblockVoter, vote } from './contract.js';
 import { PythonShell } from "python-shell";
+import { initializeWebSocket, broadcast } from './webSocket.js';
+import { createServer } from 'http';
 const app = express();
+
 const PORT = 3000;
 export const storage = new Storage({keyFilename : 'src/skilled-circle-448817-d1-e3457c9445ad.json'});
 export const bucket = storage.bucket('votingbuck')
 const upload = multer({ storage: multer.memoryStorage() });
 app.use(cors({credentials: true, origin: 'http://localhost:5173'}));
 app.use(express.json());
+const server = createServer(app);
+initializeWebSocket(server);
 app.use(cookieParser());
 const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY;
 if(JWT_SECRET_KEY === undefined){
@@ -1306,6 +1312,12 @@ app.post('/api/v3/vote',middleware, async(req : Request, res : Response) => {
             return;
         }
         const transaction = await vote(partyChainId, voterIndex);
+        const voterData = {
+            name : voter.firstName,
+            party : party.partyAbbreviation,
+            hash : transaction
+        }
+        broadcast(voterData);
         res.status(200).json({
             message : "Voted successfully",
             transactionHash : transaction
@@ -1484,7 +1496,26 @@ app.get('/api/v3/voterAddresses', async(req : Request, res : Response) => {
     }
 
 })
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+
+//universal functions
+app.post('/api/v4/resetElection', async (req: Request, res: Response) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    try {
+        await voterModel.voterModel.updateMany({}, { $set: { verified: false } }, { session });
+        await partyModel.partyModel.updateMany({}, { $set: { verified: false } }, { session });
+        const updateChain = await resetElection(); 
+        await session.commitTransaction();
+        session.endSession();
+        res.status(200).json({ message: "Election reset successfully", transactionHash: updateChain });
+    } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        res.status(500).json({ message: "Election reset failed", error: error });
+    }
 });
+
+server.listen(PORT,() => {
+    console.log(`Server is running on port ${PORT}`);
+})
 //forge create --rpc-url http://127.0.0.1:8545 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 src/Voting.sol:Voting --broadcast

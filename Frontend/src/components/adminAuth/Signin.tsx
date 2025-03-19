@@ -2,8 +2,6 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Lock, User, Mail } from 'lucide-react';
-import axios from 'axios';
-import Cookies from 'js-cookie';
 import { useNavigate } from 'react-router-dom';
 
 export interface UserCredentials {
@@ -11,11 +9,10 @@ export interface UserCredentials {
     password: string;
     rememberMe?: boolean;
   }
-export const SignInForm = ({setIsRegistering} : {setIsRegistering : (state : boolean) => void}) => {
-  const navigate = useNavigate();
+export const AdminSignInForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  
+  const navigate = useNavigate();
   const {
     register,
     handleSubmit,
@@ -25,23 +22,16 @@ export const SignInForm = ({setIsRegistering} : {setIsRegistering : (state : boo
   const onSubmit = async (data: UserCredentials) => {
     setIsLoading(true);
     try {
-      const response = await axios.post("http://localhost:3000/api/v1/signin",{
-             username : data.username,
-             password : data.password
-      });
-      if(response.status !== 200){
-        console.log("response:",response);
-          alert(response.data.message)
-          return;
+      // Simulate API call
+      if(data.username === 'admin@gmail.com' && data.password === 'admin'){
+        alert("Admin login successfully");
+        navigate("/admin/dashboard")
+      }else{
+        alert("Invalid username or password");
       }
-      const token = response.data.token;
-      Cookies.set('token',token, {expires : 2});
-      navigate(`/voter/dashboard/${token}`)
-      alert(response.data.message);
-    }catch(error : any){
-      alert(error.response.data.message)
-    }
-     finally {
+    }catch(error){
+      alert(error)
+    } finally {
       setIsLoading(false);
     }
   };
@@ -60,7 +50,7 @@ export const SignInForm = ({setIsRegistering} : {setIsRegistering : (state : boo
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Username / Voter ID
+              Username
             </label>
             <div className="relative">
               <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
@@ -120,7 +110,7 @@ export const SignInForm = ({setIsRegistering} : {setIsRegistering : (state : boo
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full cursor-pointer bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 focus:ring-4 focus:ring-purple-300 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 focus:ring-4 focus:ring-purple-300 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? 'Signing in...' : 'Sign In'}
           </button>
@@ -143,15 +133,6 @@ export const SignInForm = ({setIsRegistering} : {setIsRegistering : (state : boo
           </button>
         </form>
       </motion.div>
-      <p className="text-center mt-4 text-amber-50">
-            Don't have an account?{' '}
-            <button
-              onClick={() => setIsRegistering(true)}
-              className="text-fuchsia-400 hover:text-fuchsia-200 transition duration-300 cursor-pointer"
-            >
-              Register now
-            </button>
-          </p>
     </div>
   );
 };

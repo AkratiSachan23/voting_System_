@@ -1,12 +1,11 @@
 import {ethers} from 'ethers';
 import dotenv from 'dotenv';
-import ContractAbi from '../ABIs/Voting.json' with {type : "json"};
+import ContractAbi from '../ABIs/Voting.json' with { type: "json" };
 dotenv.config();
 const RPC_URL = process.env.RPC_URL;
 const META_PRIVATE_KEY = process.env.META_PRIVATE_KEY;
 const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS;
 const MNEOMONICString = process.env.MNEOMONIC;
-
 
 if(RPC_URL === undefined){
     throw new Error("RPC_URL is not defined")

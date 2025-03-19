@@ -60,6 +60,7 @@ export default function TeamSection () {
                 setTeamMembers([...teamMembers,teamMember.data.partyTeam]);
                 alert("Team member added successfully!")
             }
+            window.location.reload();
         } catch (error) {
             alert("Error in adding team member. Please try again!")
             console.log("error: ",error)
@@ -130,7 +131,7 @@ export default function TeamSection () {
           >
             Add Team Member
           </motion.button>
-           {active && <div className='absolute top-10 right-[10vw] w-[70vw] h-[90vh] bg-gray-500/50 backdrop-blur-3xl flex flex-col justify-center items-center gap-5 rounded-xl'>
+           {active && <div className='absolute top-10 right-[10vw] w-[70vw] h-[90vh] bg-purple-300/50 backdrop-blur-3xl flex flex-col justify-center items-center gap-5 rounded-xl'>
                 <h1 className='text-3xl font-bold bg-clip-text text-black'>Add Team Member</h1>
                 <div className='w-[50vw] '>
                     <label id='name' className='block text-sm font-medium text-gray-700 mb-1'>Name:</label>

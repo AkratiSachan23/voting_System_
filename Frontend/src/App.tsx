@@ -10,8 +10,7 @@ import PartyDash from './components/Dashboard/PartyDashboard/PartyDash';
 import Settings from './components/Dashboard/PartyDashboard/Settings';
 import View from './components/Dashboard/PartyDashboard/View';
 import Verification from './components/Dashboard/PartyDashboard/Verification';
-// import RegisteredParties from './components/Dashboard/VoterDashboard/RegisteredParties';
-// import VoterSettings from './components/Dashboard/VoterDashboard/VoterSettings'
+import { AdminSignInForm } from './components/adminAuth/Signin';
 function App() {
 
   return (
@@ -21,13 +20,12 @@ function App() {
         <Route path="/voter/auth" element= {<AuthPage />} />
         <Route path="/party/auth" element= {<PartyAuthPage />} />
         <Route path="/voter/dashboard/:token" element= {<VoterDash />} />
-        {/* <Route path="/voter/dashboard/registeredParties" element= {<RegisteredParties />} />
-        <Route path="/voter/dashboard/voterSettings" element= {<VoterSettings />} /> */}
         <Route path="/admin/dashboard" element= {<AdminDash />} />
         <Route path="/party/dashboard/:token" element= {<PartyDash />} />
         <Route path="/party/dashboard/:token/settings" element= {<Settings />} />
         <Route path="/party/dashboard/:token/updateProfile" element= {<View />} />
         <Route path="/party/dashboard/:token/verify" element= {<Verification />} />
+        <Route path="/admin/auth" element= {<AdminSignInForm />} />
         
       </Routes>
     </Router>

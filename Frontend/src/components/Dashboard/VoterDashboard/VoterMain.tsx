@@ -1,13 +1,12 @@
-
 import { 
   BarChart, 
   Calendar, 
-  CheckCircle, 
-  AlertCircle,
+  CheckCircle,
   TrendingUp,
   CircleX
 } from 'lucide-react';
 import DynamicChart from './DynamicChart';
+import Broadcasting from './Broadcasting';
 export default function VoterMain({verified, firstName, lastName, setRender} : {verified : boolean, firstName : string, lastName : string , setRender : (render : string) => void}) {
   return (
     <div className="space-y-6">
@@ -95,23 +94,7 @@ export default function VoterMain({verified, firstName, lastName, setRender} : {
 
         
         <DynamicChart/>
-
-        <div className="bg-white rounded-lg p-6 shadow-sm">
-          <h2 className="text-xl font-bold text-gray-800 mb-4">Upcoming Elections</h2>
-          <div className="space-y-4">
-            {[1, 2, 3].map((_, i) => (
-              <div key={i} className="flex items-start space-x-4 p-3 hover:bg-gray-50 rounded-lg">
-                <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
-                  <AlertCircle className="w-4 h-4 text-orange-700" />
-                </div>
-                <div>
-                  <p className="text-gray-800 font-medium">State Senate Election</p>
-                  <p className="text-sm text-gray-500">March {15 + i}, 2024</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <Broadcasting/>
       </div>
     </div>
   );

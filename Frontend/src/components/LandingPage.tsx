@@ -45,13 +45,16 @@ const LandingPage = () => {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-6 justify-center mb-16">
+              <Link to={'/admin/auth'}>
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="px-8 py-4 bg-white text-indigo-600 rounded-lg font-semibold text-lg shadow-lg hover:shadow-xl transition-all"
+                className="px-8 py-4 bg-white cursor-pointer text-indigo-600 rounded-lg font-semibold text-lg shadow-lg hover:shadow-xl transition-all"
               >
-                Get Started
+                Admin Login
               </motion.button>
+              </Link>
+              
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}

@@ -47,7 +47,7 @@ export default function ElectionControls () {
     const handleResetElection = async() => {
       setLoading(true);
         try {
-            const resetElection = await axios.post('http://localhost:3000/api/v3/resetElection');
+            const resetElection = await axios.post('http://localhost:3000/api/v4/resetElection');
             if(resetElection.status === 200){
               alert(resetElection.data.message);
               setActive(false);
