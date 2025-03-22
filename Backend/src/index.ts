@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 import voterModel from './db.js'
 import partyModel from './db.js'
 import partyTeamModel from './db.js'
+import broadcastMessages from './db.js'
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
 import multer from 'multer'
@@ -316,8 +317,9 @@ app.post('/api/v1/getPublicUrl', async (req : Request,res : Response) => {
     })
     return;
 })
-app.post('/api/v1/verifyVoter', async(req : Request, res: Response) => {
+app.post('/api/v1/verifyVoter',middleware, async(req : Request, res: Response) => {
     const voterId = req.body.voterId;
+    const selfie = req.body.file;
     try {
         const voter = await voterModel.voterModel.findOne({voterId});
         if(!voter){
@@ -327,16 +329,15 @@ app.post('/api/v1/verifyVoter', async(req : Request, res: Response) => {
             return;
         }
         const file = voter.selfieUrl;
-        const signedFile = await getPublicGoogleUrl(file);
-        res.status(300).json({
-            signedFile : signedFile
-        })
+        const storedImage = await getPublicGoogleUrl(file);
+        const givenImage = await getPublicGoogleUrl(selfie);
         const options : any = {
             mode : "text",
             pythonPath: "D:\\Programs\\python.exe",
             scriptPath: "./dist/",
-            args: [signedFile],
+            args: [storedImage,givenImage],
         }
+
         const pythonScript = await PythonShell.run("voterVerification.py",options);
         if(!pythonScript){
             res.status(500).json({
@@ -349,6 +350,7 @@ app.post('/api/v1/verifyVoter', async(req : Request, res: Response) => {
         })
 
     } catch (error) {
+        console.log(error);
         res.status(500).json({
             message : "Internal server error"
         })
@@ -1288,6 +1290,8 @@ app.post('/api/v3/distributeTokens', async(req : Request, res : Response) => {
 app.post('/api/v3/vote',middleware, async(req : Request, res : Response) => {
     const voterId = req.body.voterId;
     const partyId = req.body.partyId;
+    const time  = new Date();
+    
     try {
         const voter = await voterModel.voterModel.findOne({voterId});
         if(!voter){
@@ -1315,8 +1319,15 @@ app.post('/api/v3/vote',middleware, async(req : Request, res : Response) => {
         const voterData = {
             name : voter.firstName,
             party : party.partyAbbreviation,
-            hash : transaction
+            hash : transaction,
+            time : time.toISOString()
         }
+        const broadcastData = await broadcastMessages.broadcastMessages.create({
+            name : voterData.name,
+            party : voterData.party,
+            hash : voterData.hash,
+            time : voterData.time
+        })
         broadcast(voterData);
         res.status(200).json({
             message : "Voted successfully",
@@ -1514,6 +1525,20 @@ app.post('/api/v4/resetElection', async (req: Request, res: Response) => {
         res.status(500).json({ message: "Election reset failed", error: error });
     }
 });
+app.get('/api/v4/getMessages',async(req : Request, res : Response) => {
+    try {
+        const messages = await broadcastMessages.broadcastMessages.find();
+        res.status(200).json({
+            message : "Messages fetched successfully",
+            messages
+        })
+    } catch (error) {
+        res.status(500).json({
+            message : "Messages not fetched successfully",
+            error : error
+    })
+    }
+})
 
 server.listen(PORT,() => {
     console.log(`Server is running on port ${PORT}`);

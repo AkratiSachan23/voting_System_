@@ -112,13 +112,23 @@ const PartyteamSchema = new mongoose.Schema({
     party : {type : mongoose.Schema.Types.ObjectId, ref : "Party", required : true}
 })
 
+const BroadcastMessagesSchema = new mongoose.Schema({
+    name : {type : String, required : true},
+    party : {type : String, required : true},
+    hash : {type : String, requried : true},
+    time : {type : String, required : true}
+})
+
 const voterModel = mongoose.model("Voter",VoterSchema);
 const partyModel = mongoose.model("Party",PartySchema);
 const partyteamModel = mongoose.model("Partyteam",PartyteamSchema);
+const broadcastMessages = mongoose.model("BroadcastMessages",BroadcastMessagesSchema);
+
 
 
 export default {
     voterModel,
     partyModel,
-    partyteamModel
+    partyteamModel,
+    broadcastMessages
 }

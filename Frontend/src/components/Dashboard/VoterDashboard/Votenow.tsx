@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Vote, Users, PartyPopper, Trophy } from 'lucide-react';
+import { useEffect, useState, useRef } from 'react';
+import { Vote, Users, PartyPopper, Trophy,Circle, X } from 'lucide-react';
 import axios from 'axios';
 
 interface Party {
@@ -20,6 +20,11 @@ export default function Votenow () {
         '#742A2A', '#9B2C2C', '#C53030', '#E53E3E', '#742A2A'
       ];
     const [parties, setParties] = useState<Party[]>([]);
+    const [loading, setLoading] = useState<boolean>(false);
+    const [selectedId, setSelectedId] = useState<number | null>(null);
+    const [isOpen, setIsOpen] = useState<boolean>(false);
+    let videoRef = useRef<HTMLVideoElement | null>(null);
+    const streamRef = useRef<MediaStream | null>(null);
       useEffect(() => {
             const getPartiesId = async () => {
                 try {
@@ -65,6 +70,71 @@ export default function Votenow () {
           return null;
         }
       };
+      const startCamera = async (id : number) => {
+        setIsOpen(true);
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+            streamRef.current = stream;
+          }
+          setSelectedId(id);
+          
+        } catch (err) {
+          console.error("Error accessing camera:", err);
+        }
+      };
+    
+      const stopCamera = () => {
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach(track => track.stop());
+          streamRef.current = null;
+        }
+        setSelectedId(null)
+        setIsOpen(false);
+      };
+    
+      const capturePhoto = async () => {
+        setLoading(true);
+        if (videoRef.current) {
+          const canvas = document.createElement('canvas');
+          canvas.width = videoRef.current.videoWidth;
+          canvas.height = videoRef.current.videoHeight;
+          canvas.getContext('2d')?.drawImage(videoRef.current, 0, 0);
+          const image = canvas.toDataURL('image/jpeg');
+          const blob = await (await fetch(image)).blob();
+          const file = new File([blob], "photo.jpg", { type: "image/jpeg" });
+          const formData = new FormData();
+          formData.append("file", file);
+          try {
+            const upload = await axios.post("http://localhost:3000/api/v1/upload",formData, {
+              headers: { 'Content-Type': 'multipart/form-data' }
+            }
+            )
+            if(upload.status === 200){
+              const verify = await axios.post("http://localhost:3000/api/v1/verifyVoter",{
+                file : upload.data.fileUrl
+              },{
+                withCredentials : true
+              });
+              if(verify.status === 200){
+                handleVote(selectedId as number);
+              }else{
+                alert("Voter not verified. Please try again!");
+              }
+            }else{
+              alert("Internal error. Please try again!")
+            }
+          } catch (error:any) {
+            console.log(error)
+            alert(error.response.data.message)
+          }finally{
+            setLoading(false)
+          }
+          stopCamera();
+          
+        }
+      };
       const handleVote = async(id: number) => {
             try {
                 const isVerified = await axios.get('http://localhost:3000/api/v1/getVoter',
@@ -100,9 +170,12 @@ export default function Votenow () {
             }
         
       };
-    
       const maxVotes = Math.max(...parties.map(party => party.votes));
-    
+    if(loading) return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="w-12 h-12 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
+      </div>
+    )
       return (
         <div className="min-h-screen bg-white">
           <div className="max-w-4xl mx-auto py-12 px-4">
@@ -136,7 +209,7 @@ export default function Votenow () {
                       </div>
                     </div>
                     <button
-                      onClick={() => handleVote(party.id)}
+                      onClick={() => startCamera(party.id)}
                       className="flex items-center gap-2 px-6 py-2 bg-indigo-600 text-white rounded-full
                         transition-all duration-300 hover:bg-indigo-700 focus:outline-none focus:ring-2
                         focus:ring-indigo-500 focus:ring-offset-2 cursor-pointer"
@@ -158,6 +231,33 @@ export default function Votenow () {
               ))}
             </div>
           </div>
+          {isOpen  && (
+                    <div className="fixed inset-0 flex items-center justify-center  bg-opacity-10 backdrop-blur-lg z-50">
+                    <div className="relative bg-white rounded-lg shadow-2xl w-full max-w-lg p-6">
+                      <video
+                        ref={videoRef}
+                        autoPlay
+                        playsInline
+                        className="rounded-lg shadow-md w-full scale-x-[-1]"
+                      />
+                      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-4">
+                        <button
+                          onClick={capturePhoto}
+                          className="flex items-center justify-center w-12 h-12 bg-white rounded-full shadow-md hover:bg-gray-100 transition cursor-pointer"
+                        >
+                          <Circle className="text-red-500" size={32} />
+                        </button>
+                        <button
+                          onClick={stopCamera}
+                          className="flex items-center justify-center w-12 h-12 bg-white rounded-full shadow-md hover:bg-gray-100 transition cursor-pointer"
+                        >
+                          <X className="text-gray-700" size={24} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+          )}
         </div>
+        
       );
 }

@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsc && node dist\\index.js",
-    "build": "tsc --build",
+    "build": "tsc --build && copyfiles -u 1 src/voterVerification.py dist/",
     "test": "echo \"Error: no test specified\" && exit 1",
     "postinstall": "pip install -r requirements.txt"
   },
@@ -39,5 +39,8 @@
     "python-shell": "^5.0.0",
     "websocket": "^1.0.35",
     "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "copyfiles": "^2.4.1"
   }
 }

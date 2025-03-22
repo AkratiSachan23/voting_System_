@@ -1,8 +1,38 @@
 
+import { useEffect, useState } from 'react';
 import {useWebSocket} from '../../../utils/util'
 import { BadgeCheck  } from 'lucide-react';
+import axios from 'axios';
+type MESSAGES = {
+  name : string;
+  party : string;
+  hash : string;
+  time : string;
+}
 export default function Broadcasting () {
-    const messages  = useWebSocket()
+    const [messages, setMessages] = useState<MESSAGES[]>([]);
+    useEffect(() => {
+      const getMessages = async () => {
+        try {
+          const response = await axios.get("http://localhost:3000/api/v4/getMessages");
+          if (response.status === 200) {
+            setMessages(response.data.messages);
+          }
+        } catch (error) {
+          console.error("Error fetching messages:", error);
+        }
+      };
+      getMessages();
+      console.log(messages)
+    }, []);
+    let newMessage = useWebSocket();
+  
+    useEffect(() => {
+      if (newMessage) {
+        setMessages((prevMessages) => [newMessage, ...prevMessages]);
+      }
+    }, [newMessage]);
+  
     return (
         <div className="bg-white rounded-lg p-6 shadow-sm">
           <h2 className="text-xl font-bold text-gray-800 mb-4">Current Voting</h2>
@@ -15,7 +45,7 @@ export default function Broadcasting () {
                 <div>
                     <div className='flex items-center justify-between w-full'>
                         <span className="text-gray-800 font-medium">{message.name} </span>
-                        <span className="text-gray-800 font-medium">{message.party}</span>
+                        <span className="text-gray-800 font-medium border-2">{message.party}</span>
                     </div>
                   <p className="text-sm text-gray-500">{message.hash}</p>
                 </div>

@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { BarChart3, Users, Award, Crown, House} from 'lucide-react';
-
+import LOGO from '../../../assets/logo.png'
 const menuItems = [
   {icon : House , label : "Home"},
   { icon: BarChart3, label: 'Vote Distribution' },
@@ -14,9 +14,9 @@ export default function Sidebar ({setRender} : {setRender : (render : string) =>
     return(
         <div className="h-screen w-64 bg-white border-r border-purple-100 p-4">
       <div className="flex items-center gap-2 mb-8">
-        <Award className="w-8 h-8 text-purple-600" />
+        <img src={LOGO} alt="Logo" className='w-10 h-10 rounded-full'/>
         <h1 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-          ElectAdmin
+          ElectCode
         </h1>
       </div>
       
