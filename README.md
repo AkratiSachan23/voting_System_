@@ -24,7 +24,7 @@ This system streamlines elections by offering a user-friendly advanced interface
 - **Frontend**: React, Tailwind CSS  
   Responsive UI and API integration.
 - **Backend**: Node.js  
-  Handles logic, APIs, and data storage.
+  Handles logic, APIs, Jwt and data storage.
 - **Smart Contracts**: Solidity (Ethereum)  
   Immutable voting logic and records.
 
