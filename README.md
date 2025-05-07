@@ -8,7 +8,7 @@ A secure and transparent digital voting platform built with modern web technolog
 
 ## Overview
 
-This system streamlines elections by offering a user-friendly interface and tamper-proof vote recording through Ethereum smart contracts.
+This system streamlines elections by offering a user-friendly advanced interface and tamper-proof vote recording through Ethereum smart contracts.
 
 ## Features
 
