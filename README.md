@@ -19,7 +19,7 @@ This system streamlines elections by offering a user-friendly advanced interface
 - **Blockchain Security**: Solidity contracts ensure data integrity.
 - **Admin Dashboard**: Tools to manage elections and review data.
 
-## Architecture
+## Architecture of System
 
 - **Frontend**: React, Tailwind CSS  
   Responsive UI and API integration.
